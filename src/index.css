@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fuentes de Stitch */
+  --font-headline: 'Playfair Display', serif;
+  --font-sans: 'Inter', sans-serif;
+
+  /* Colores de Stitch */
+  --color-brand-primary: #1A1A1A;     /* Negro principal */
+  --color-brand-secondary: #E5E0D8;   /* Crema/Beige suave */
+  --color-brand-tertiary: #1B1A19;    /* Oscuro secundario */
+  --color-brand-neutral: #797676;     /* Gris texto secundario */
+  --color-brand-bg: #F9F8F6;          /* Fondo crema claro estilo Apple */
+}
