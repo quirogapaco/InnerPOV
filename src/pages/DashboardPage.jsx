@@ -1,25 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 import MyEventsView from './events/MyEventsView';
-import CreateEventPage from './events/CreateEventPage';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('events');
-  const [isCreatingEvent, setIsCreatingEvent] = useState(false); // Estado del Wizard
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Si el usuario está creando un evento, muestra la vista completa del Wizard
-  if (isCreatingEvent) {
-    return (
-      <CreateEventPage
-        onCancel={() => setIsCreatingEvent(false)}
-        onEventCreated={() => setIsCreatingEvent(false)}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#fdf8f8] font-sans">
@@ -37,7 +27,7 @@ export default function DashboardPage() {
 
         <div className="p-6 md:p-8 max-w-[1400px] w-full mx-auto flex-1">
           {activeTab === 'events' && (
-            <MyEventsView onNewEventClick={() => setIsCreatingEvent(true)} />
+            <MyEventsView onNewEventClick={() => navigate('/create-event')} />
           )}
 
           {activeTab === 'participations' && (

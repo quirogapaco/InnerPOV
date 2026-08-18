@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { renderIcon } from '../../utils/iconMapper';
+import LocationPickerMap from '../ui/LocationPickerMap';
 import {
   CheckCircle2,
   Calendar as CalendarIcon,
-  MapPin,
   Camera,
   Plus,
   AlertCircle,
@@ -37,7 +37,9 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [slugStatus, setSlugStatus] = useState({ isAvailable: true, message: '' });
 
-  // 1. CARGAR CATALOGO DESDE SUPABASE
+  // 1. Obtener la fecha de hoy en formato YYYY-MM-DD para deshabilitar días pasados
+  const todayStr = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
     async function fetchEventTypes() {
       try {
@@ -50,7 +52,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
 
         setEventTypes(data || []);
 
-        // Si no hay un tipo seleccionado previa/e, asigna la Boda por defecto
         if (!formData.eventTypeId && !formData.isCustomType && data?.length > 0) {
           const defaultBoda = data.find((t) => t.slug === 'boda') || data[0];
           updateFormData({ eventTypeId: defaultBoda.id, isCustomType: false });
@@ -65,11 +66,33 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
     fetchEventTypes();
 
     if (!formData.coverPhotoUrl && DEFAULT_COVERS.length > 0) {
-      updateFormData({ coverPhotoUrl: DEFAULT_COVERS[0].url });
+      updateFormData({ coverPhotoUrl: DEFAULT_COVERS[0].url, coverFile: null });
     }
   }, []);
 
-  // Generador de Slug
+  const handleLocalFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido.');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    updateFormData({
+      coverPhotoUrl: previewUrl,
+      coverFile: file,
+    });
+  };
+
+  const handleSelectDefaultCover = (coverUrl) => {
+    updateFormData({
+      coverPhotoUrl: coverUrl,
+      coverFile: null,
+    });
+  };
+
   const generateSlug = (text) => {
     return text
       .toLowerCase()
@@ -81,7 +104,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
       .replace(/-+/g, '-');
   };
 
-  // Verificación de disponibilidad del slug
   const checkSlugAvailability = async (slugToCheck) => {
     if (!slugToCheck || slugToCheck.length < 3) {
       setSlugStatus({ isAvailable: false, message: 'El enlace debe tener al menos 3 caracteres.' });
@@ -123,7 +145,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
     checkSlugAvailability(newSlug);
   };
 
-  // Selección de tipo estándar (Boda, Corporativo, etc.)
   const handleSelectStandardType = (typeId) => {
     updateFormData({
       eventTypeId: typeId,
@@ -132,7 +153,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
     });
   };
 
-  // Selección de la opción "Otro"
   const handleSelectCustomType = () => {
     updateFormData({
       eventTypeId: null,
@@ -143,6 +163,14 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
 
   return (
     <div className="max-w-[800px] mx-auto space-y-10 text-left animate-in fade-in duration-500">
+      <input
+        type="file"
+        id="cover-file-input"
+        accept="image/*"
+        onChange={handleLocalFileSelect}
+        className="hidden"
+      />
+
       <div>
         <span className="font-sans text-[11px] font-semibold text-neutral-600 bg-[#f7f3f2] px-3.5 py-1.5 rounded-full mb-3 inline-block tracking-wider uppercase">
           PASO 1: FUNDAMENTOS
@@ -155,7 +183,7 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
         </p>
       </div>
 
-      {/* Selector Dinámico de Tipo de Evento */}
+      {/* Selector de Tipo de Evento */}
       <section className="space-y-4">
         <label className="font-sans text-xs font-semibold uppercase tracking-widest text-[#444748] block ml-1">
           Tipo de Evento
@@ -167,7 +195,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-            {/* Opciones devueltas por la BD */}
             {eventTypes.map((type) => {
               const isSelected = !formData.isCustomType && formData.eventTypeId === type.id;
 
@@ -205,7 +232,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
               );
             })}
 
-            {/* Opción Virtual "Otro / Personalizado" */}
             <button
               type="button"
               onClick={handleSelectCustomType}
@@ -238,7 +264,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
           </div>
         )}
 
-        {/* Input condicional cuando eligen "Otro" */}
         {formData.isCustomType && (
           <div className="pt-2 animate-in fade-in duration-300">
             <label className="font-sans text-[11px] font-semibold text-neutral-500 uppercase tracking-wider block mb-1.5 ml-1">
@@ -255,10 +280,10 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
         )}
       </section>
 
-      {/* Resto del formulario (Título, Slug, Fecha, Ubicación, Portada) */}
+      {/* Formulario Principal */}
       <section className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Título */}
+          {/* Título del Evento */}
           <div className="flex flex-col gap-2">
             <label className="font-sans text-xs font-semibold text-[#444748] uppercase tracking-widest ml-1">
               Título del Evento
@@ -330,17 +355,18 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
             )}
           </div>
 
-          {/* Fecha */}
-          <div className="flex flex-col gap-2">
+          {/* Fecha (Con restricción de fecha mínima = hoy) */}
+          <div className="flex flex-col gap-2 md:col-span-2">
             <label className="font-sans text-xs font-semibold text-[#444748] uppercase tracking-widest ml-1">
-              Fecha
+              Fecha del Evento
             </label>
             <div className="relative">
               <input
                 type="date"
+                min={todayStr} // 👈 Impide seleccionar fechas del pasado
                 value={formData.eventDate || ''}
                 onChange={(e) => updateFormData({ eventDate: e.target.value })}
-                className="w-full bg-[#F4F1EE] border-none rounded-xl p-4 font-sans text-sm text-[#1c1b1b] outline-none focus:ring-1 focus:ring-black focus:bg-white transition-all"
+                className="w-full bg-[#F4F1EE] border-none rounded-xl p-4 font-sans text-sm text-[#1c1b1b] outline-none focus:ring-1 focus:ring-black focus:bg-white transition-all cursor-pointer"
               />
               <CalendarIcon
                 size={18}
@@ -348,26 +374,39 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
               />
             </div>
           </div>
+        </div>
 
-          {/* Ubicación */}
-          <div className="flex flex-col gap-2">
-            <label className="font-sans text-xs font-semibold text-[#444748] uppercase tracking-widest ml-1">
-              Ubicación
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Ej. Quinta San Luis, Ambato, Ecuador"
-                value={formData.locationName || ''}
-                onChange={(e) => updateFormData({ locationName: e.target.value })}
-                className="w-full bg-[#F4F1EE] border-none rounded-xl p-4 font-sans text-sm text-[#1c1b1b] outline-none pr-12 focus:ring-1 focus:ring-black focus:bg-white transition-all"
-              />
-              <MapPin
-                size={18}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
-              />
-            </div>
-          </div>
+        {/* Nombre del Lugar */}
+        <div className="flex flex-col gap-2 pt-2">
+          <label className="font-sans text-xs font-semibold text-[#444748] uppercase tracking-widest ml-1">
+            Nombre del Lugar
+          </label>
+          <input
+            type="text"
+            placeholder="Ej. Quinta San Luis, Salón Los Encinos..."
+            value={formData.locationName || ''}
+            onChange={(e) => updateFormData({ locationName: e.target.value })}
+            className="w-full bg-[#F4F1EE] border-none rounded-xl p-4 font-sans text-sm text-[#1c1b1b] placeholder-neutral-400 focus:ring-1 focus:ring-black focus:bg-white transition-all outline-none"
+          />
+        </div>
+
+        {/* Mapa Interactivo */}
+        <div className="flex flex-col gap-2 pt-2">
+          <label className="font-sans text-xs font-semibold text-[#444748] uppercase tracking-widest ml-1">
+            Ubicación en el Mapa
+          </label>
+          <LocationPickerMap
+            address={formData.locationAddress}
+            latitude={formData.latitude}
+            longitude={formData.longitude}
+            onLocationChange={({ address, latitude, longitude }) => {
+              updateFormData({
+                locationAddress: address,
+                latitude,
+                longitude,
+              });
+            }}
+          />
         </div>
 
         {/* Foto de Portada */}
@@ -376,7 +415,10 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
             Foto de Portada
           </label>
 
-          <div className="relative h-60 rounded-[24px] overflow-hidden border border-black/5 group cursor-pointer bg-[#F4F1EE]">
+          <div
+            onClick={() => document.getElementById('cover-file-input').click()}
+            className="relative h-60 rounded-[24px] overflow-hidden border border-black/5 group cursor-pointer bg-[#F4F1EE]"
+          >
             {formData.coverPhotoUrl ? (
               <img
                 src={formData.coverPhotoUrl}
@@ -401,13 +443,31 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
           </div>
 
           <div className="flex gap-3 overflow-x-auto pb-2 pt-1">
+            {/* 1. PRIMER BOTÓN: Subir archivo propio desde el dispositivo */}
+            <button
+              type="button"
+              onClick={() => document.getElementById('cover-file-input').click()}
+              className={`flex-shrink-0 w-28 h-18 rounded-xl bg-[#F4F1EE] flex flex-col items-center justify-center border border-dashed transition-colors ${
+                formData.coverFile
+                  ? 'border-black bg-white font-bold text-black ring-2 ring-black/10'
+                  : 'border-neutral-300 text-neutral-500 hover:text-black hover:border-black'
+              }`}
+            >
+              <Plus size={20} />
+              <span className="font-sans text-[10px] font-semibold mt-1">
+                {formData.coverFile ? 'Cambiar Foto' : 'Subir Foto'}
+              </span>
+            </button>
+
+            {/* 2. Galería de muestras predeterminadas */}
             {DEFAULT_COVERS.map((cover) => {
-              const isSelected = formData.coverPhotoUrl === cover.url;
+              const isSelected =
+                formData.coverPhotoUrl === cover.url && !formData.coverFile;
               return (
                 <button
                   key={cover.id}
                   type="button"
-                  onClick={() => updateFormData({ coverPhotoUrl: cover.url })}
+                  onClick={() => handleSelectDefaultCover(cover.url)}
                   className={`flex-shrink-0 w-28 h-18 rounded-xl overflow-hidden border-2 transition-all ${
                     isSelected
                       ? 'border-black ring-2 ring-black/10'
@@ -418,18 +478,6 @@ export default function Step1Details({ formData, updateFormData, setCanProceed }
                 </button>
               );
             })}
-
-            <button
-              type="button"
-              onClick={() => {
-                const url = prompt('Ingresa la URL de una imagen para la portada:');
-                if (url) updateFormData({ coverPhotoUrl: url });
-              }}
-              className="flex-shrink-0 w-28 h-18 rounded-xl bg-[#F4F1EE] flex flex-col items-center justify-center border border-dashed border-neutral-300 text-neutral-500 hover:text-black hover:border-black transition-colors"
-            >
-              <Plus size={20} />
-              <span className="font-sans text-[10px] font-semibold mt-1">Personalizada</span>
-            </button>
           </div>
         </div>
       </section>

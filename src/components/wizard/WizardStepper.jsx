@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Bell } from 'lucide-react';
+import { Check, Bell, X } from 'lucide-react';
 
 const STEPS = [
   { number: 1, label: 'Detalles' },
@@ -8,7 +8,7 @@ const STEPS = [
   { number: 4, label: 'Publicar' },
 ];
 
-export default function WizardStepper({ currentStep, user }) {
+export default function WizardStepper({ currentStep, user, onCancel }) {
   const userAvatar =
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250';
 
@@ -62,7 +62,7 @@ export default function WizardStepper({ currentStep, user }) {
           })}
         </div>
 
-        {/* Perfil & Notificaciones */}
+        {/* Perfil & Notificaciones & Salir */}
         <div className="flex items-center gap-3 md:gap-4">
           <button className="p-2 text-neutral-500 hover:text-black transition-colors rounded-full hover:bg-black/5">
             <Bell size={20} />
@@ -74,6 +74,16 @@ export default function WizardStepper({ currentStep, user }) {
               className="w-full h-full object-cover"
             />
           </div>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-neutral-600 hover:text-black hover:bg-black/5 rounded-full border border-black/10 transition-all duration-200"
+              title="Salir de la creación"
+            >
+              <X size={14} />
+              <span>Salir</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

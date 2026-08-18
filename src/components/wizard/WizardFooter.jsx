@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function WizardFooter({
   currentStep,
@@ -7,6 +7,7 @@ export default function WizardFooter({
   onPrev,
   onNext,
   isSubmitting = false,
+  isNextDisabled = false,
 }) {
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
@@ -17,7 +18,7 @@ export default function WizardFooter({
         {/* Botón Atrás */}
         <button
           onClick={onPrev}
-          disabled={isFirstStep}
+          disabled={isFirstStep || isSubmitting}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-sans text-xs font-semibold transition-all ${
             isFirstStep
               ? 'opacity-0 pointer-events-none'
@@ -41,17 +42,23 @@ export default function WizardFooter({
 
           <button
             onClick={onNext}
-            disabled={isSubmitting}
-            className="bg-black text-white px-7 md:px-8 py-3 rounded-full font-sans text-xs font-semibold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+            disabled={isSubmitting || isNextDisabled}
+            className={`px-7 md:px-8 py-3 rounded-full font-sans text-xs font-semibold flex items-center gap-2 transition-all shadow-sm ${
+              isNextDisabled || isSubmitting
+                ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed opacity-70'
+                : 'bg-black text-white hover:opacity-90 active:scale-95 cursor-pointer'
+            }`}
           >
             <span>
-              {isLastStep
+              {isSubmitting
+                ? 'Guardando...'
+                : isLastStep
                 ? '✦ Publicar Evento'
                 : currentStep === 3
                 ? 'Ver Resumen'
                 : 'Siguiente'}
             </span>
-            {!isLastStep && <ArrowRight size={16} />}
+            {!isLastStep && !isSubmitting && <ArrowRight size={16} />}
           </button>
         </div>
       </div>

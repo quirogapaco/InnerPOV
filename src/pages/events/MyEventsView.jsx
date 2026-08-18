@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import MyEventsHeader from '../../components/events/MyEventsHeader';
-import EventCard from '../../components/events/EventCard';
+import MyEventsHeader from '../../components/event/MyEventsHeader';
+import EventCard from '../../components/event/EventCard';
 import { LayoutGrid, List, ArrowRight, QrCode } from 'lucide-react';
 
 const MOCK_EVENTS = [

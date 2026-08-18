@@ -1,7 +1,10 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import CreateEventPage from './pages/events/CreateEventPage';
+import EventDetailView from './pages/events/EventDetailView';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -15,14 +18,48 @@ function AppContent() {
     );
   }
 
-  // Si existe sesión activa -> Muestra el Dashboard, si no -> Muestra AuthPage
-  return user ? <DashboardPage /> : <AuthPage />;
+  return (
+    <Routes>
+      {/* Ruta pública para ver un evento sin requerir autenticación */}
+      <Route path="/e/:slug" element={<EventDetailView />} />
+
+      {/* Ruta para inicio de sesión / registro */}
+      <Route
+        path="/auth"
+        element={user ? <Navigate to="/" replace /> : <AuthPage />}
+      />
+
+      {/* Rutas que requieren autenticación */}
+      <Route
+        path="/"
+        element={user ? <DashboardPage /> : <Navigate to="/auth" replace />}
+      />
+      <Route
+        path="/create-event"
+        element={
+          user ? (
+            <CreateEventPage
+              onCancel={() => window.history.back()}
+              onEventCreated={() => { }}
+            />
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+
+      {/* Redirección por defecto */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
