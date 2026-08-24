@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import EventHeader from '../../components/event/EventHeader';
 import EventGalleryFeed from '../../components/event/EventGalleryFeed';
+import UploadMediaModal from '../../components/event/UploadMediaModal';
 import { Loader2, Plus, X } from 'lucide-react';
 
 export default function EventDetailView() {
@@ -13,8 +14,26 @@ export default function EventDetailView() {
   const [event, setEvent] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [albums, setAlbums] = useState([]);
+  const [photos, setPhotos] = useState([]);
   const [activeTab, setActiveTab] = useState('feed');
   const [showQRModal, setShowQRModal] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const fetchPhotos = async (eventId) => {
+    if (!eventId) return;
+    try {
+      const { data, error } = await supabase
+        .from('media')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setPhotos(data || []);
+    } catch (error) {
+      console.error('Error al cargar fotos:', error);
+    }
+  };
 
   // 1. CARGA DE DATOS DESDE SUPABASE AL ENTRAR AL EVENTO
   useEffect(() => {
@@ -45,6 +64,9 @@ export default function EventDetailView() {
           .select('*')
           .eq('event_id', eventData.id);
         setAlbums(albumsData || []);
+
+        // D. Cargar fotos
+        await fetchPhotos(eventData.id);
 
       } catch (error) {
         console.error('Error al cargar evento:', error);
@@ -79,7 +101,7 @@ export default function EventDetailView() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenQR={() => setShowQRModal(true)}
-        onUploadClick={() => alert('Abrir selector de archivos...')}
+        onUploadClick={() => setIsUploadModalOpen(true)}
         onBack={() => navigate('/')}
       />
 
@@ -89,14 +111,14 @@ export default function EventDetailView() {
           activeTab={activeTab}
           schedules={schedules}
           albums={albums}
-          photos={[]} // Aquí se pasan las fotos de la tabla de fotos
+          photos={photos} // Aquí se pasan las fotos de la tabla de fotos
         />
       </main>
 
       {/* BOTÓN FLOTANTE INFERIOR ESTILO iOS (Floating Action Button) */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
         <button
-          onClick={() => alert('Abrir selector de archivos...')}
+          onClick={() => setIsUploadModalOpen(true)}
           className="px-6 py-3.5 rounded-full bg-blue-600 text-white font-sans text-xs font-semibold shadow-2xl flex items-center gap-2 hover:bg-blue-700 active:scale-95 transition-all"
         >
           <Plus size={18} />
@@ -123,6 +145,14 @@ export default function EventDetailView() {
           </div>
         </div>
       )}
+
+      {/* MODAL DE SUBIDA DE MEDIA */}
+      <UploadMediaModal 
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        eventId={event?.id}
+        onSuccess={() => fetchPhotos(event?.id)}
+      />
     </div>
   );
 }

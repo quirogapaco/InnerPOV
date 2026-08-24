@@ -21,7 +21,7 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
                 className="break-inside-avoid rounded-3xl overflow-hidden shadow-sm border border-black/5 group cursor-pointer hover:shadow-md transition-all duration-300"
               >
                 <img
-                  src={photo.url}
+                  src={photo.file_url}
                   alt="Recuerdo"
                   className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -71,7 +71,7 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
               key={idx}
               className="break-inside-avoid rounded-3xl overflow-hidden shadow-sm border border-black/5"
             >
-              <img src={photo.url} alt="Etapa" className="w-full h-auto object-cover" />
+              <img src={photo.file_url} alt="Etapa" className="w-full h-auto object-cover" />
             </div>
           ))}
         </div>
