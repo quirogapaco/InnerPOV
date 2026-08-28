@@ -172,6 +172,7 @@ export default function CreateEventPage({ onCancel, onEventCreated }) {
           cover_photo_url: finalCoverUrl,
           event_type_id: formData.isCustomType ? null : formData.eventTypeId,
           custom_type_name: formData.isCustomType ? formData.customTypeName : null,
+          created_by: user.id,
           status: 'active',
         })
         .select()
@@ -179,13 +180,14 @@ export default function CreateEventPage({ onCancel, onEventCreated }) {
 
       if (eventError) throw eventError;
 
-      // 2b. REGISTRO EN 'event_members' (CREADOR COMO ADMIN)
+      // 2b. REGISTRO EN 'event_participants' (CREADOR COMO ADMIN)
       const { error: memberError } = await supabase
-        .from('event_members')
+        .from('event_participants')
         .insert({
           event_id: newEvent.id,
           user_id: user.id,
-          role: 'ADMIN',
+          display_name: user.user_metadata?.full_name || 'Creador',
+          role: 'MODERATOR',
         });
 
       if (memberError) throw memberError;
@@ -221,21 +223,19 @@ export default function CreateEventPage({ onCancel, onEventCreated }) {
         if (schedError) throw schedError;
       }
 
-      // 5. REGISTROS EN 'albums'
+      // 5. REGISTROS EN 'event_challenges'
       if (formData.missions && formData.missions.length > 0) {
-        const albumsToInsert = formData.missions.map((m) => ({
+        const challengesToInsert = formData.missions.map((m) => ({
           event_id: newEvent.id,
-          name: m.name,
+          title: m.name || m.title,
           slug: m.slug,
           description: m.description,
-          time_limit_minutes: null,
-          expires_at: null,
-          is_system_default: m.is_system_default ?? false,
+          max_photos_allowed: m.max_photos_allowed || 1,
         }));
 
-        const { error: albumsError } = await supabase.from('albums').insert(albumsToInsert);
+        const { error: challengesError } = await supabase.from('event_challenges').insert(challengesToInsert);
 
-        if (albumsError) throw albumsError;
+        if (challengesError) throw challengesError;
       }
 
       if (onEventCreated) onEventCreated();

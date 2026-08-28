@@ -26,25 +26,32 @@ export default function AuthPage() {
   // Manejo centralizado del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('[AuthPage] handleSubmit iniciado', { activeTab, email: formData.email });
     setLoading(true);
     setErrorMessage('');
 
     try {
       if (activeTab === 'login') {
-        await signIn({
+        console.log('[AuthPage] llamando a signIn...');
+        const res = await signIn({
           email: formData.email,
           password: formData.password,
         });
+        console.log('[AuthPage] signIn exitoso', res);
       } else {
-        await signUp({
+        console.log('[AuthPage] llamando a signUp...');
+        const res = await signUp({
           email: formData.email,
           password: formData.password,
           fullName: formData.fullName,
         });
+        console.log('[AuthPage] signUp exitoso', res);
       }
     } catch (error) {
+      console.error('[AuthPage] Error en handleSubmit:', error);
       setErrorMessage(error.message || 'Ocurrió un error en la autenticación.');
     } finally {
+      console.log('[AuthPage] finally: cambiando loading a false');
       setLoading(false);
     }
   };

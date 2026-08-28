@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Camera, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-export default function EventGalleryFeed({ activeTab, schedules, albums, photos = [] }) {
+export default function EventGalleryFeed({ activeTab, schedules, albums, photos = [], slug }) {
   const [selectedSchedule, setSelectedSchedule] = useState('all');
 
   // TAB 1: FEED GENERAL (Pinterest Masonry)
@@ -90,15 +91,16 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {albums.map((album) => (
-              <div
+              <Link
+                to={`/e/${slug}/mission/${album.id}`}
                 key={album.id}
-                className="bg-white rounded-3xl p-5 border border-black/5 shadow-sm hover:shadow-md transition-all cursor-pointer space-y-3"
+                className="bg-white rounded-3xl p-5 border border-black/5 shadow-sm hover:shadow-md transition-all cursor-pointer space-y-3 block"
               >
                 <div className="w-10 h-10 rounded-2xl bg-[#F4F1EE] flex items-center justify-center text-black">
                   <Camera size={20} />
                 </div>
                 <div>
-                  <h4 className="font-sans text-sm font-bold text-[#1c1b1b]">{album.name}</h4>
+                  <h4 className="font-sans text-sm font-bold text-[#1c1b1b]">{album.title}</h4>
                   {album.description && (
                     <p className="font-sans text-xs text-neutral-500 line-clamp-2 mt-0.5">
                       {album.description}
@@ -109,7 +111,7 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
                   <span>Ver álbum del reto</span>
                   <span>→</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

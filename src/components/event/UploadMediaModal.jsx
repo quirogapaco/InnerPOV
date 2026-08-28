@@ -4,13 +4,14 @@ import { processAndUploadImage } from '../../utils/uploadService';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
-export default function UploadMediaModal({ isOpen, onClose, eventId, onSuccess }) {
+export default function UploadMediaModal({ isOpen, onClose, eventId, albumId, onSuccess }) {
   const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [errorMsg, setErrorMsg] = useState(null); // Nuevo estado para errores amigables
   
   const fileInputRef = useRef(null);
 
@@ -33,6 +34,7 @@ export default function UploadMediaModal({ isOpen, onClose, eventId, onSuccess }
   const handleUpload = async () => {
     if (!selectedFile) return;
 
+    setErrorMsg(null); // Limpiar errores previos
     setIsUploading(true);
     setUploadProgress('Comprimiendo imagen...');
 
@@ -42,17 +44,39 @@ export default function UploadMediaModal({ isOpen, onClose, eventId, onSuccess }
       
       setUploadProgress('Guardando recuerdo...');
 
+      // 1.5 Obtener el participant_id del usuario actual
+      if (!user) {
+        setErrorMsg('Parece que no has iniciado sesión. ¡Ingresa para compartir tus recuerdos!');
+        setIsUploading(false);
+        return;
+      }
+      
+      const { data: participantData, error: participantError } = await supabase
+        .from('event_participants')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', user.id)
+        .single();
+        
+      if (participantError || !participantData) {
+        setErrorMsg('Aún no eres participante de este evento. Únete para empezar a compartir.');
+        setIsUploading(false);
+        return;
+      }
+
       // 2. Guardar en la base de datos de Supabase usando el esquema 'media'
       const { error } = await supabase
         .from('media')
         .insert([{
           event_id: eventId,
-          guest_id: "bb6459d2-22b5-4cf9-8d83-e60db174d35a",
+          challenge_id: albumId || null,
+          participant_id: participantData.id,
           file_url: publicUrl,
-          file_path: filePath,
+          storage_path: filePath,
           file_type: fileType,
-          message: message.trim() || null,
-          taken_at: new Date().toISOString()
+          caption: message.trim() || null,
+          taken_at: new Date().toISOString(),
+          is_hidden: false
         }]);
 
       if (error) throw error;
@@ -63,7 +87,7 @@ export default function UploadMediaModal({ isOpen, onClose, eventId, onSuccess }
       
     } catch (error) {
       console.error('Error en el flujo de subida:', error);
-      alert('Hubo un error al subir la foto. Intenta nuevamente.');
+      setErrorMsg('Ups, algo salió mal al guardar tu recuerdo. Intenta de nuevo por favor.');
     } finally {
       setIsUploading(false);
       setUploadProgress('');
@@ -75,6 +99,7 @@ export default function UploadMediaModal({ isOpen, onClose, eventId, onSuccess }
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setMessage('');
+    setErrorMsg(null);
     setIsUploading(false);
     onClose();
   };
@@ -156,6 +181,16 @@ export default function UploadMediaModal({ isOpen, onClose, eventId, onSuccess }
             </div>
           )}
         </div>
+
+        {/* Error Banner */}
+        {errorMsg && (
+          <div className="px-4 pb-2 animate-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-2xl font-sans text-xs font-medium border border-red-100 flex items-center gap-2">
+              <X size={16} className="text-red-500 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          </div>
+        )}
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-black/5 bg-white">
