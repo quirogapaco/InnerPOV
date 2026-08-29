@@ -1,54 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import MyEventsHeader from '../../components/event/MyEventsHeader';
 import EventCard from '../../components/event/EventCard';
-import { LayoutGrid, List, ArrowRight, QrCode } from 'lucide-react';
-
-const MOCK_EVENTS = [
-  {
-    id: '1',
-    title: 'Boda de Sofía & Mateo',
-    coverUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
-    category: 'Boda',
-    status: 'active',
-    location: 'Quinta San Luis, Ambato',
-    date: '28 Jul 2026',
-    guests: 120,
-    photos: 340,
-    stages: 4,
-  },
-  {
-    id: '2',
-    title: 'Boda de Carlos & Elena',
-    coverUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800',
-    category: 'Boda',
-    status: 'draft',
-    location: 'En proceso de configuración',
-    date: '15 Oct 2026',
-    guests: 0,
-    photos: 0,
-    stages: 0,
-  },
-  {
-    id: '3',
-    title: 'Aniversario de Oro - Familia Quiroga',
-    coverUrl:
-      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&q=80&w=800',
-    category: 'Aniversario',
-    status: 'archived',
-    location: 'Quito, Ecuador',
-    date: '12 Dec 2025',
-    guests: 85,
-    photos: 842,
-    stages: 3,
-  },
-];
+import { LayoutGrid, List, ArrowRight, QrCode, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export default function MyEventsView({ onNewEventClick }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const filteredEvents = MOCK_EVENTS.filter((event) =>
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('events')
+          .select(`
+            *,
+            event_types ( name )
+          `)
+          .eq('created_by', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const formattedEvents = data.map((ev) => ({
+          id: ev.id,
+          slug: ev.slug,
+          title: ev.title,
+          coverUrl: ev.cover_photo_url || 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800',
+          category: ev.event_types?.name || ev.custom_type_name || 'Evento',
+          status: ev.status,
+          location: ev.location_name || 'Ubicación pendiente',
+          date: ev.event_date ? new Date(ev.event_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Fecha pendiente',
+          guests: 0,
+          photos: 0,
+          stages: 0,
+        }));
+
+        setEvents(formattedEvents);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [user]);
+
+  const filteredEvents = events.filter((event) =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -84,14 +89,20 @@ export default function MyEventsView({ onNewEventClick }) {
 
       {/* 3. Rejilla Responsive de Tarjetas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEvents.length > 0 ? (
+        {loading ? (
+          <div className="col-span-full py-16 flex justify-center items-center">
+             <Loader2 className="animate-spin text-neutral-400" size={32} />
+          </div>
+        ) : filteredEvents.length > 0 ? (
           filteredEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <Link key={event.id} to={`/e/${event.slug}`} className="block">
+              <EventCard event={event} />
+            </Link>
           ))
         ) : (
           <div className="col-span-full py-16 text-center text-neutral-400 bg-white rounded-3xl border border-dashed border-neutral-200 p-8">
             <p className="font-sans text-sm">
-              No se encontraron eventos con "{searchTerm}"
+              No se encontraron eventos {searchTerm && `con "${searchTerm}"`}
             </p>
           </div>
         )}
