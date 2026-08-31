@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import CreateEventPage from './pages/events/CreateEventPage';
 import EventDetailView from './pages/events/EventDetailView';
+import MissionDetailView from './pages/events/MissionDetailView';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -22,6 +23,7 @@ function AppContent() {
     <Routes>
       {/* Ruta pública para ver un evento sin requerir autenticación */}
       <Route path="/e/:slug" element={<EventDetailView />} />
+      <Route path="/e/:slug/mission/:albumId" element={<MissionDetailView />} />
 
       {/* Ruta para inicio de sesión / registro */}
       <Route

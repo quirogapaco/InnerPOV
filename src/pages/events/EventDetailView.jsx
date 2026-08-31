@@ -15,6 +15,7 @@ export default function EventDetailView() {
   const [schedules, setSchedules] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [settings, setSettings] = useState(null);
   const [activeTab, setActiveTab] = useState('feed');
   const [showQRModal, setShowQRModal] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -24,7 +25,7 @@ export default function EventDetailView() {
     try {
       const { data, error } = await supabase
         .from('media')
-        .select('*')
+        .select('*, event_participants!media_participant_id_fkey(*)')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
       
@@ -55,15 +56,27 @@ export default function EventDetailView() {
         const { data: schedData } = await supabase
           .from('event_schedules')
           .select('*')
-          .eq('event_id', eventData.id);
+          .eq('event_id', eventData.id)
+          .order('start_time', { ascending: true });
         setSchedules(schedData || []);
 
-        // C. Consultar los retos (albums) asociados
+        // C. Consultar los retos (challenges) asociados
         const { data: albumsData } = await supabase
-          .from('albums')
+          .from('event_challenges')
           .select('*')
-          .eq('event_id', eventData.id);
+          .eq('event_id', eventData.id)
+          .order('created_at', { ascending: true });
         setAlbums(albumsData || []);
+
+        // E. Consultar configuración del evento (Settings)
+        const { data: settingsData } = await supabase
+          .from('event_settings')
+          .select('*')
+          .eq('event_id', eventData.id)
+          .single();
+        if (settingsData) {
+          setSettings(settingsData);
+        }
 
         // D. Cargar fotos
         await fetchPhotos(eventData.id);
@@ -112,6 +125,7 @@ export default function EventDetailView() {
           schedules={schedules}
           albums={albums}
           photos={photos} // Aquí se pasan las fotos de la tabla de fotos
+          slug={slug}
         />
       </main>
 

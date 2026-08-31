@@ -1,34 +1,20 @@
 import React, { useState } from 'react';
 import { Camera, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import PhotoCard from './PhotoCard';
+import MediaGallery from './MediaGallery';
 
-export default function EventGalleryFeed({ activeTab, schedules, albums, photos = [] }) {
+export default function EventGalleryFeed({ activeTab, schedules, albums, photos = [], slug }) {
   const [selectedSchedule, setSelectedSchedule] = useState('all');
 
   // TAB 1: FEED GENERAL (Pinterest Masonry)
   if (activeTab === 'feed') {
     return (
       <div className="w-full max-w-6xl mx-auto px-4 py-6">
-        {photos.length === 0 ? (
-          <div className="py-16 text-center space-y-2 text-neutral-400">
-            <p className="font-sans text-xs">Aún no hay fotos compartidas en este evento.</p>
-            <p className="font-sans text-[11px]">¡Sé el primero en subir un recuerdo!</p>
-          </div>
-        ) : (
-          <div className="columns-2 sm:columns-3 md:columns-4 gap-4 space-y-4">
-            {photos.map((photo, idx) => (
-              <div
-                key={photo.id || idx}
-                className="break-inside-avoid rounded-3xl overflow-hidden shadow-sm border border-black/5 group cursor-pointer hover:shadow-md transition-all duration-300"
-              >
-                <img
-                  src={photo.file_url}
-                  alt="Recuerdo"
-                  className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        <MediaGallery 
+          photos={photos} 
+          emptyStateMessage="Aún no hay fotos compartidas en este evento. ¡Sé el primero en subir un recuerdo!" 
+        />
       </div>
     );
   }
@@ -65,16 +51,10 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
         </div>
 
         {/* Mosaico de Fotos Filtrado */}
-        <div className="columns-2 sm:columns-3 md:columns-4 gap-4 space-y-4">
-          {photos.map((photo, idx) => (
-            <div
-              key={idx}
-              className="break-inside-avoid rounded-3xl overflow-hidden shadow-sm border border-black/5"
-            >
-              <img src={photo.file_url} alt="Etapa" className="w-full h-auto object-cover" />
-            </div>
-          ))}
-        </div>
+        <MediaGallery 
+          photos={photos} 
+          emptyStateMessage="No hay fotos en esta etapa del evento." 
+        />
       </div>
     );
   }
@@ -90,15 +70,16 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {albums.map((album) => (
-              <div
+              <Link
+                to={`/e/${slug}/mission/${album.id}`}
                 key={album.id}
-                className="bg-white rounded-3xl p-5 border border-black/5 shadow-sm hover:shadow-md transition-all cursor-pointer space-y-3"
+                className="bg-white rounded-3xl p-5 border border-black/5 shadow-sm hover:shadow-md transition-all cursor-pointer space-y-3 block"
               >
                 <div className="w-10 h-10 rounded-2xl bg-[#F4F1EE] flex items-center justify-center text-black">
                   <Camera size={20} />
                 </div>
                 <div>
-                  <h4 className="font-sans text-sm font-bold text-[#1c1b1b]">{album.name}</h4>
+                  <h4 className="font-sans text-sm font-bold text-[#1c1b1b]">{album.title}</h4>
                   {album.description && (
                     <p className="font-sans text-xs text-neutral-500 line-clamp-2 mt-0.5">
                       {album.description}
@@ -109,7 +90,7 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
                   <span>Ver álbum del reto</span>
                   <span>→</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
