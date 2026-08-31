@@ -105,9 +105,14 @@ export default function MissionDetailView() {
           >
             <ArrowLeft size={20} className="text-black" />
           </button>
-          <h1 className="font-sans text-[13px] text-black uppercase tracking-[0.05em] font-semibold">
-            Álbum de Reto
-          </h1>
+          <div className="flex flex-col items-center">
+            <h1 className="font-sans text-[13px] text-black uppercase tracking-[0.05em] font-semibold">
+              Álbum de Reto
+            </h1>
+            <span className="font-sans text-[11px] text-neutral-500 mt-0.5 font-medium">
+              {photos.length} {photos.length === 1 ? 'recuerdo' : 'recuerdos'}
+            </span>
+          </div>
           <button
             className="w-10 h-10 rounded-full bg-white border border-black/5 flex items-center justify-center hover:bg-neutral-50 transition-colors"
           >

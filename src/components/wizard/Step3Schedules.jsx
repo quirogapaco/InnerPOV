@@ -12,7 +12,12 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  MapPin,
+  FileText,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import LocationPickerMap from '../ui/LocationPickerMap';
 
 export default function Step3Schedules({ formData, updateFormData }) {
   const [loadingDefaults, setLoadingTypes] = useState(false);
@@ -28,6 +33,12 @@ export default function Step3Schedules({ formData, updateFormData }) {
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [scheduleStartTime, setScheduleStartTime] = useState('18:00');
   const [scheduleEndTime, setScheduleEndTime] = useState('19:00');
+  const [scheduleLocationName, setScheduleLocationName] = useState('');
+  const [scheduleLocationAddress, setScheduleLocationAddress] = useState('');
+  const [scheduleLatitude, setScheduleLatitude] = useState(null);
+  const [scheduleLongitude, setScheduleLongitude] = useState(null);
+  const [scheduleInstructions, setScheduleInstructions] = useState('');
+  const [showAdvancedLocation, setShowAdvancedLocation] = useState(false);
 
   // Modal para agregar retos personalizados
   const [showCustomModal, setShowCustomModal] = useState(false);
@@ -166,6 +177,12 @@ export default function Step3Schedules({ formData, updateFormData }) {
     setScheduleTitle('');
     setScheduleStartTime('20:00');
     setScheduleEndTime('21:00');
+    setScheduleLocationName('');
+    setScheduleLocationAddress('');
+    setScheduleLatitude(null);
+    setScheduleLongitude(null);
+    setScheduleInstructions('');
+    setShowAdvancedLocation(false);
     setShowScheduleModal(true);
   };
 
@@ -175,6 +192,12 @@ export default function Step3Schedules({ formData, updateFormData }) {
     setScheduleTitle(stage.title);
     setScheduleStartTime(stage.startTime || '18:00');
     setScheduleEndTime(stage.endTime || '19:00');
+    setScheduleLocationName(stage.location_name || '');
+    setScheduleLocationAddress(stage.location_address || '');
+    setScheduleLatitude(stage.latitude || null);
+    setScheduleLongitude(stage.longitude || null);
+    setScheduleInstructions(stage.instructions || '');
+    setShowAdvancedLocation(!!(stage.location_name || stage.instructions || stage.latitude));
     setShowScheduleModal(true);
   };
 
@@ -199,6 +222,11 @@ export default function Step3Schedules({ formData, updateFormData }) {
                 slug: generateSlug(scheduleTitle),
                 startTime: scheduleStartTime,
                 endTime: scheduleEndTime,
+                location_name: scheduleLocationName?.trim() || null,
+                location_address: scheduleLocationAddress || null,
+                latitude: scheduleLatitude || null,
+                longitude: scheduleLongitude || null,
+                instructions: scheduleInstructions?.trim() || null,
               }
             : item
         )
@@ -211,6 +239,11 @@ export default function Step3Schedules({ formData, updateFormData }) {
         slug: generateSlug(scheduleTitle),
         startTime: scheduleStartTime,
         endTime: scheduleEndTime,
+        location_name: scheduleLocationName?.trim() || null,
+        location_address: scheduleLocationAddress || null,
+        latitude: scheduleLatitude || null,
+        longitude: scheduleLongitude || null,
+        instructions: scheduleInstructions?.trim() || null,
         active: true,
         isDefault: false,
       };
@@ -400,6 +433,29 @@ export default function Step3Schedules({ formData, updateFormData }) {
                                 +1 día
                               </span>
                             )}
+                            {stage.location_name && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#f7f3f2] px-2 py-0.5 text-[10px] font-semibold text-neutral-600 truncate max-w-[120px]">
+                                <MapPin size={10} />
+                                {stage.location_name}
+                              </span>
+                            )}
+                            {stage.instructions && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#f7f3f2] px-2 py-0.5 text-[10px] font-semibold text-neutral-600">
+                                <FileText size={10} />
+                                Notas
+                              </span>
+                            )}
+                            {!stage.location_name && !stage.instructions && stage.active && (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full border border-dashed border-neutral-300 px-2 py-0.5 text-[10px] font-semibold text-neutral-400 cursor-pointer hover:bg-neutral-50 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEditSchedule(stage);
+                                }}
+                              >
+                                + Añadir ubicación / notas
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -547,9 +603,9 @@ export default function Step3Schedules({ formData, updateFormData }) {
 
       {/* MODAL CREAR / EDITAR ETAPA */}
       {showScheduleModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-black/10 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-black/5 pb-3">
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full flex flex-col max-h-[90vh] border border-black/10 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-black/5 p-6 pb-4 flex-shrink-0">
               <h3 className="font-headline text-lg font-medium text-black">
                 {editingScheduleId ? 'Editar Etapa' : 'Agregar Nueva Etapa'}
               </h3>
@@ -562,7 +618,8 @@ export default function Step3Schedules({ formData, updateFormData }) {
               </button>
             </div>
 
-            <form onSubmit={handleSaveSchedule} className="space-y-4">
+            <div className="overflow-y-auto p-6 pt-4 flex-1">
+              <form id="schedule-form" onSubmit={handleSaveSchedule} className="space-y-4">
               <div className="space-y-1">
                 <label className="font-sans text-xs font-semibold uppercase tracking-wider text-neutral-600">
                   Nombre de la Etapa
@@ -644,29 +701,91 @@ export default function Step3Schedules({ formData, updateFormData }) {
                 return null;
               })()}
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-black/5">
+              {/* Sección Opcional Colapsable */}
+              <div className="pt-2 border-t border-black/5">
                 <button
                   type="button"
-                  onClick={() => setShowScheduleModal(false)}
-                  className="px-4 py-2 rounded-full font-sans text-xs font-semibold text-neutral-500 hover:bg-neutral-100"
+                  onClick={() => setShowAdvancedLocation(!showAdvancedLocation)}
+                  className="flex items-center justify-between w-full p-2 rounded-xl hover:bg-neutral-50 transition-colors group"
                 >
-                  Cancelar
+                  <div className="flex items-center gap-2 text-neutral-600 group-hover:text-black">
+                    <MapPin size={16} />
+                    <span className="font-sans text-xs font-semibold">Ubicación e Indicaciones (Opcional)</span>
+                  </div>
+                  {showAdvancedLocation ? <ChevronUp size={16} className="text-neutral-400" /> : <ChevronDown size={16} className="text-neutral-400" />}
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-full bg-black text-white font-sans text-xs font-semibold hover:opacity-90"
-                >
-                  {editingScheduleId ? 'Guardar Cambios' : 'Agregar Etapa'}
-                </button>
+
+                {showAdvancedLocation && (
+                  <div className="mt-3 space-y-4 px-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-1">
+                      <label className="font-sans text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                        Indicaciones / Notas
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Ej. Llevar vestimenta adecuada para jardín..."
+                        value={scheduleInstructions}
+                        onChange={(e) => setScheduleInstructions(e.target.value)}
+                        className="w-full bg-[#F4F1EE] border-none rounded-xl p-3 font-sans text-xs text-black outline-none focus:ring-1 focus:ring-black focus:bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-sans text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                        Nombre del Lugar / Salón
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Salón Cristal, Terraza Norte..."
+                        value={scheduleLocationName}
+                        onChange={(e) => setScheduleLocationName(e.target.value)}
+                        className="w-full bg-[#F4F1EE] border-none rounded-xl p-3 font-sans text-xs text-black outline-none focus:ring-1 focus:ring-black focus:bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1 pb-2">
+                      <label className="font-sans text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                        Mapa
+                      </label>
+                      <LocationPickerMap
+                        address={scheduleLocationAddress}
+                        latitude={scheduleLatitude}
+                        longitude={scheduleLongitude}
+                        onLocationChange={({ address, latitude, longitude }) => {
+                          setScheduleLocationAddress(address);
+                          setScheduleLatitude(latitude);
+                          setScheduleLongitude(longitude);
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </form>
+
+              </form>
+            </div>
+
+            <div className="flex justify-end gap-2 p-4 border-t border-black/5 bg-[#fdf8f8] rounded-b-2xl flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowScheduleModal(false)}
+                className="px-4 py-2 rounded-full font-sans text-xs font-semibold text-neutral-500 hover:bg-neutral-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="schedule-form"
+                className="px-5 py-2 rounded-full bg-black text-white font-sans text-xs font-semibold hover:opacity-90 transition-opacity"
+              >
+                {editingScheduleId ? 'Guardar Cambios' : 'Agregar Etapa'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* MODAL CREAR RETO PERSONALIZADO */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-black/10 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-black/5 pb-3">
               <h3 className="font-headline text-lg font-medium text-black">

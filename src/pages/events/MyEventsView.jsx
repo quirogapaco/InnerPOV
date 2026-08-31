@@ -119,6 +119,8 @@ export default function MyEventsView({ onNewEventClick }) {
               <EventCard
                 key={event.id}
                 event={event}
+                mode="preview"
+                className="h-full"
                 onClick={() => event.slug && navigate(`/e/${event.slug}`)}
               />
             ))

@@ -3,6 +3,7 @@ import { Camera, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PhotoCard from './PhotoCard';
 import MediaGallery from './MediaGallery';
+import ScheduleCard from './ScheduleCard';
 
 export default function EventGalleryFeed({ activeTab, schedules, albums, photos = [], slug }) {
   const [selectedSchedule, setSelectedSchedule] = useState('all');
@@ -21,40 +22,32 @@ export default function EventGalleryFeed({ activeTab, schedules, albums, photos 
 
   // TAB 2: ETAPAS DEL EVENTO (Schedules)
   if (activeTab === 'schedules') {
-    return (
-      <div className="w-full max-w-5xl mx-auto px-4 py-6 space-y-6">
-        {/* Pills Selector de Etapas */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <button
-            onClick={() => setSelectedSchedule('all')}
-            className={`px-4 py-2 rounded-full font-sans text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedSchedule === 'all'
-                ? 'bg-black text-white shadow-sm'
-                : 'bg-white border border-black/5 text-neutral-600 hover:bg-neutral-50'
-            }`}
-          >
-            Todas las etapas
-          </button>
-          {schedules.map((stage) => (
-            <button
-              key={stage.id}
-              onClick={() => setSelectedSchedule(stage.id)}
-              className={`px-4 py-2 rounded-full font-sans text-xs font-semibold whitespace-nowrap transition-all ${
-                selectedSchedule === stage.id
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-white border border-black/5 text-neutral-600 hover:bg-neutral-50'
-              }`}
-            >
-              {stage.title}
-            </button>
-          ))}
+    if (!schedules || schedules.length === 0) {
+      return (
+        <div className="w-full max-w-5xl mx-auto px-4 py-16 flex flex-col items-center text-center">
+          <p className="font-sans text-sm text-neutral-500 font-medium bg-[#f7f3f2] px-6 py-3 rounded-full border border-black/5 shadow-sm">
+            El cronograma de este evento aún no ha sido publicado.
+          </p>
         </div>
+      );
+    }
 
-        {/* Mosaico de Fotos Filtrado */}
-        <MediaGallery 
-          photos={photos} 
-          emptyStateMessage="No hay fotos en esta etapa del evento." 
-        />
+    const now = new Date();
+
+    return (
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 flex flex-col gap-2.5 animate-in fade-in duration-300">
+        {schedules.map((stage) => {
+          let isCurrent = false;
+          if (stage.start_time && stage.end_time) {
+            const start = new Date(stage.start_time);
+            const end = new Date(stage.end_time);
+            isCurrent = now >= start && now <= end;
+          }
+
+          return (
+            <ScheduleCard key={stage.id} schedule={stage} isCurrent={isCurrent} />
+          );
+        })}
       </div>
     );
   }

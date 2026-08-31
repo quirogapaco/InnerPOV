@@ -18,6 +18,9 @@ export default function EventHeader({
   onOpenQR,
   onUploadClick,
   onBack,
+  participantsCount = 0,
+  photosCount = 0,
+  onViewParticipants,
 }) {
   // Formatear la fecha
   const formatDate = (dateString) => {
@@ -99,9 +102,18 @@ export default function EventHeader({
             </a>
           )}
 
-          <div className="px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 shadow-sm flex items-center gap-1.5 font-sans text-xs text-neutral-700">
+          <button
+            type="button"
+            onClick={onViewParticipants}
+            className="px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 shadow-sm flex items-center gap-1.5 font-sans text-xs text-neutral-700 hover:bg-white transition-all active:scale-95"
+          >
             <Users size={14} className="text-black" />
-            <span>Invitados</span>
+            <span>{participantsCount > 0 ? `${participantsCount} Participantes` : 'Participantes'}</span>
+          </button>
+
+          <div className="px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 shadow-sm flex items-center gap-1.5 font-sans text-xs text-neutral-700 cursor-default">
+            <Camera size={14} className="text-black" />
+            <span>{photosCount > 0 ? `${photosCount} Recuerdos` : 'Recuerdos'}</span>
           </div>
 
           <button

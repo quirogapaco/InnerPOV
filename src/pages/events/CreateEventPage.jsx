@@ -216,6 +216,10 @@ export default function CreateEventPage({ onCancel, onEventCreated }) {
           end_time: formData.eventDate
             ? formatScheduleIso(formData.eventDate, s.endTime, scheduleMeta.nextDayOffset)
             : null,
+          location_name: s.location_name || null,
+          latitude: s.latitude || null,
+          longitude: s.longitude || null,
+          instructions: s.instructions || null,
         };
       });
 

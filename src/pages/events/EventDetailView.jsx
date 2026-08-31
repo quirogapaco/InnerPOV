@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Copy, Check } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import useEventParticipant from "../../hooks/useEventParticipant";
@@ -9,6 +9,7 @@ import EventGalleryFeed from "../../components/event/EventGalleryFeed";
 import UploadMediaModal from "../../components/event/UploadMediaModal";
 import JoinEventModal from "../../components/event/JoinEventModal";
 import GuestAuthModal from "../../components/event/GuestAuthModal";
+import ParticipantsModal from "../../components/event/ParticipantsModal";
 
 export default function EventDetailView() {
   const { slug } = useParams();
@@ -26,6 +27,9 @@ export default function EventDetailView() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [guestModalOpen, setGuestModalOpen] = useState(false);
+  const [participants, setParticipants] = useState([]);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const {
     participant,
@@ -35,6 +39,23 @@ export default function EventDetailView() {
     joinAsUser,
     joinAsGuest,
   } = useEventParticipant(event?.id);
+
+  const fetchParticipants = async (eventId) => {
+    if (!eventId) return;
+    try {
+      const { data, error } = await supabase
+        .from('event_participants')
+        .select('id, display_name, role, status, user_id, created_at')
+        .eq('event_id', eventId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setParticipants(data || []);
+    } catch (error) {
+      console.error("Error al cargar participantes:", error);
+    }
+  };
 
   const fetchPhotos = async (eventId) => {
     if (!eventId) return;
@@ -91,6 +112,7 @@ export default function EventDetailView() {
         }
 
         await fetchPhotos(eventData.id);
+        await fetchParticipants(eventData.id);
       } catch (error) {
         console.error("Error al cargar evento:", error);
       } finally {
@@ -159,6 +181,16 @@ export default function EventDetailView() {
     eventPublicUrl,
   )}`;
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(eventPublicUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error('Error al copiar:', err);
+    }
+  };
+
   const isLocked = !isParticipant;
 
   return (
@@ -177,6 +209,9 @@ export default function EventDetailView() {
           onOpenQR={() => setShowQRModal(true)}
           onUploadClick={() => setIsUploadModalOpen(true)}
           onBack={() => navigate("/")}
+          participantsCount={participants.length}
+          photosCount={photos.length}
+          onViewParticipants={() => setShowParticipantsModal(true)}
         />
 
         <main>
@@ -214,6 +249,13 @@ export default function EventDetailView() {
             <p className="font-sans text-xs text-neutral-500">
               Muestra este código a tus invitados para ingresar al instante.
             </p>
+            <button
+              onClick={handleCopyLink}
+              className="w-full flex items-center justify-center gap-2 py-2.5 mt-2 rounded-xl bg-[#f7f3f2] hover:bg-[#e4dfd7] text-black font-sans text-xs font-semibold transition-colors border border-black/5"
+            >
+              {copiedLink ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+              {copiedLink ? '¡Enlace copiado!' : 'Copiar enlace'}
+            </button>
           </div>
         </div>
       )}
@@ -259,6 +301,15 @@ export default function EventDetailView() {
           onEmailSignUp={async ({ email, password, fullName }) => {
             await signUp({ email, password, fullName });
           }}
+        />
+      )}
+
+      {showParticipantsModal && (
+        <ParticipantsModal
+          isOpen={showParticipantsModal}
+          onClose={() => setShowParticipantsModal(false)}
+          participants={participants}
+          currentUser={user}
         />
       )}
     </div>

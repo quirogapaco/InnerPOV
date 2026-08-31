@@ -162,20 +162,34 @@ export default function EventCard({ event, mode = 'grid', actions = null, classN
 
   if (mode === 'preview') {
     return (
-      <div className={`bg-white rounded-[24px] overflow-hidden border border-black/5 shadow-sm ${className}`}>
-        <div className="relative h-64 sm:h-72 overflow-hidden bg-[#F4F1EE]">
+      <div 
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onClick={onClick}
+        onKeyDown={handleKeyDown}
+        className={`bg-white rounded-[24px] overflow-hidden border border-black/5 flex flex-col transition-all duration-300 ${onClick ? 'cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-1 group' : 'shadow-sm'} ${className}`}
+      >
+        <div className="relative h-48 sm:h-52 overflow-hidden bg-[#F4F1EE]">
           <img
             src={normalized.coverUrl}
             alt={normalized.title}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-transform duration-700 ${onClick ? 'group-hover:scale-105' : ''}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-          <div className="absolute bottom-6 left-6 right-6 text-white space-y-1">
+          {/* Status Badge Top Right */}
+          <div className="absolute top-4 right-4">
+            <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-md ${meta.badgeClass}`}>
+              {isActive && <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+              {meta.label}
+            </span>
+          </div>
+
+          <div className="absolute bottom-5 left-5 right-5 text-white space-y-1">
             <span className="inline-block px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-sans font-semibold uppercase tracking-wider">
               {normalized.category}
             </span>
-            <h2 className="font-headline text-2xl sm:text-3xl font-medium leading-tight line-clamp-1">
+            <h2 className="font-headline text-xl sm:text-2xl font-medium leading-tight line-clamp-1">
               {normalized.title}
             </h2>
             <div className="flex items-center gap-1.5 text-xs font-sans text-neutral-200 pt-0.5">
@@ -185,13 +199,13 @@ export default function EventCard({ event, mode = 'grid', actions = null, classN
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-5 space-y-5 flex-1 flex flex-col">
           {normalized.stages > 0 && (
             <div className="flex flex-wrap gap-2">
               {Array.from({ length: Math.min(normalized.stages, 3) }).map((_, index) => (
                 <span
                   key={`${normalized.id}-stage-${index}`}
-                  className="px-3 py-1 rounded-full bg-[#F4F1EE] text-[#1c1b1b] font-sans text-[11px] font-semibold"
+                  className="px-3 py-1 rounded-full bg-[#F4F1EE] text-[#1c1b1b] font-sans text-[10px] font-semibold"
                 >
                   {index === 0 ? 'Etapa principal' : `Etapa ${index + 1}`}
                 </span>
@@ -201,39 +215,39 @@ export default function EventCard({ event, mode = 'grid', actions = null, classN
 
           <div className="space-y-4 pt-1">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#F4F1EE] flex items-center justify-center text-black flex-shrink-0 mt-0.5">
-                <MapPin size={18} />
+              <div className="w-7 h-7 rounded-lg bg-[#F4F1EE] flex items-center justify-center text-black flex-shrink-0 mt-0.5">
+                <MapPin size={16} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h4 className="font-sans text-xs font-bold text-[#1c1b1b]">Ubicación</h4>
-                <p className="font-sans text-xs text-neutral-500 leading-relaxed">
+                <p className="font-sans text-xs text-neutral-500 leading-relaxed truncate">
                   {normalized.location}
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#F4F1EE] flex items-center justify-center text-black flex-shrink-0 mt-0.5">
-                <Users size={18} />
+              <div className="w-7 h-7 rounded-lg bg-[#F4F1EE] flex items-center justify-center text-black flex-shrink-0 mt-0.5">
+                <Users size={16} />
               </div>
               <div>
                 <h4 className="font-sans text-xs font-bold text-[#1c1b1b]">Capacidad & Reglas</h4>
                 <p className="font-sans text-xs text-neutral-500 leading-relaxed">
-                  Hasta {normalized.guests || 150} invitados • {normalized.photos === 0 ? 'Fotos ilimitadas' : `${normalized.photos} fotos por persona`}
+                  Hasta {normalized.guests || 150} inv. • {normalized.photos === 0 ? 'Fotos ilimitadas' : `${normalized.photos} fotos/pers.`}
                 </p>
               </div>
             </div>
           </div>
 
           {normalized.challenges > 0 && (
-            <div className="pt-4 border-t border-black/5 space-y-2">
+            <div className="pt-4 border-t border-black/5 space-y-2 mt-auto">
               <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
                 Retos Fotográficos ({normalized.challenges})
               </span>
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs font-sans text-neutral-700">
+                <div className="flex items-center gap-2 text-[11px] font-sans text-neutral-700">
                   <Sparkles size={14} className="text-black flex-shrink-0" />
-                  <span className="truncate">Prepárate para compartir momentos memorables.</span>
+                  <span className="truncate">Momentos para compartir.</span>
                 </div>
               </div>
             </div>
