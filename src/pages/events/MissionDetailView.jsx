@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeft, Camera, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Plus, MoreHorizontal, Users, Lock, Unlock, CheckCircle } from 'lucide-react';
 import UploadMediaModal from '../../components/event/UploadMediaModal';
+import PhotoCard from '../../components/event/PhotoCard';
+import MediaGallery from '../../components/event/MediaGallery';
 
 export default function MissionDetailView() {
   const { slug, albumId } = useParams();
@@ -15,9 +17,7 @@ export default function MissionDetailView() {
   const [album, setAlbum] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
-  // NOTA: Usamos el ID hardcodeado que tienes en UploadMediaModal para pruebas
-  const HARDCODED_GUEST_ID = "bb6459d2-22b5-4cf9-8d83-e60db174d35";
+  const [currentParticipantId, setCurrentParticipantId] = useState(null);
 
   const fetchMissionData = async () => {
     try {
@@ -27,9 +27,22 @@ export default function MissionDetailView() {
         .select('id, title, slug')
         .eq('slug', slug)
         .single();
-      
+
       if (eventErr) throw eventErr;
       setEvent(eventData);
+
+      if (user) {
+        const { data: participantData } = await supabase
+          .from('event_participants')
+          .select('id')
+          .eq('event_id', eventData.id)
+          .eq('user_id', user.id)
+          .single();
+        
+        if (participantData) {
+          setCurrentParticipantId(participantData.id);
+        }
+      }
 
       // 2. Obtener Álbum / Reto
       const { data: albumData, error: albumErr } = await supabase
@@ -37,7 +50,7 @@ export default function MissionDetailView() {
         .select('*')
         .eq('id', albumId)
         .single();
-      
+
       if (albumErr) throw albumErr;
       setAlbum(albumData);
 
@@ -74,87 +87,127 @@ export default function MissionDetailView() {
 
   // Lógica BeReal: Comprobar si el usuario actual ha subido al menos una foto
   const hasParticipated = photos.some(
-    (p) => (user && p.participant_id === user.id) || p.participant_id === HARDCODED_GUEST_ID
+    (p) => currentParticipantId && p.participant_id === currentParticipantId
+  );
+
+  const userPhoto = photos.find(
+    (p) => currentParticipantId && p.participant_id === currentParticipantId
   );
 
   return (
     <div className="min-h-screen bg-[#fdf8f8] font-sans pb-28">
-      {/* Encabezado Minimalista */}
-      <div className="bg-white px-4 py-4 sticky top-0 z-30 border-b border-black/5 flex items-center justify-between">
-        <button onClick={() => navigate(`/e/${slug}`)} className="p-2 -ml-2 rounded-full hover:bg-neutral-100 transition-colors">
-          <ArrowLeft size={24} className="text-black" />
-        </button>
-        <h1 className="font-headline text-lg font-bold text-black flex-1 text-center truncate px-2">
-          {album?.title || 'Reto Fotográfico'}
-        </h1>
-        <div className="w-10"></div>
-      </div>
+      {/* Top Navigation Area */}
+      <header className="sticky top-0 w-full z-50 bg-white/60 backdrop-blur-md border-b border-black/5">
+        <div className="flex justify-between items-center px-4 md:px-8 py-4 w-full max-w-7xl mx-auto">
+          <button
+            onClick={() => navigate(`/e/${slug}`)}
+            className="w-10 h-10 rounded-full bg-white border border-black/5 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+          >
+            <ArrowLeft size={20} className="text-black" />
+          </button>
+          <h1 className="font-sans text-[13px] text-black uppercase tracking-[0.05em] font-semibold">
+            Álbum de Reto
+          </h1>
+          <button
+            className="w-10 h-10 rounded-full bg-white border border-black/5 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+          >
+            <MoreHorizontal size={20} className="text-black" />
+          </button>
+        </div>
+      </header>
 
-      <div className="px-4 py-6 max-w-5xl mx-auto space-y-6">
-        {/* Descripción del Reto */}
-        {album?.description && (
-          <div className="bg-white rounded-3xl p-5 border border-black/5 shadow-sm text-center space-y-2">
-            <div className="w-12 h-12 rounded-full bg-[#F4F1EE] mx-auto flex items-center justify-center text-black mb-2">
-              <Camera size={24} />
+      <main className="pt-8 pb-12 px-4 md:px-8 max-w-[1200px] mx-auto w-full">
+        {/* Challenge Summary Card */}
+        <section className="bg-white rounded-3xl border border-black/5 p-6 md:p-8 mb-12 relative overflow-hidden shadow-sm">
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#e4dfd7] opacity-20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-black">
+                <Camera size={24} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 rounded-full bg-[#e4dfd7] text-[#65625c] font-sans text-[13px] font-semibold uppercase tracking-wider">
+                  Reto Activo
+                </span>
+                <span className="px-3 py-1 rounded-full bg-neutral-100 text-neutral-500 font-sans text-[13px] font-semibold uppercase tracking-wider flex items-center gap-1">
+                  <Users size={14} /> {photos.length > 0 ? new Set(photos.map(p => p.participant_id)).size : 0} participantes
+                </span>
+              </div>
             </div>
-            <p className="font-sans text-sm text-neutral-600">{album.description}</p>
+
+            <h2 className="font-headline text-3xl md:text-5xl text-black font-semibold mb-4">
+              {album?.title || 'Reto Fotográfico'}
+            </h2>
+
+            <p className="font-sans text-lg text-neutral-600 max-w-2xl mb-8">
+              {album?.description || 'Sube aquí tu mejor recuerdo para este reto.'}
+            </p>
+
+            {!hasParticipated && (
+              <div className="inline-flex items-center gap-2 px-4 py-3 bg-neutral-50 rounded-xl text-neutral-500 font-sans text-[13px] font-semibold">
+                <Lock size={18} />
+                <span>Regla: Sube tu foto para desbloquear la galería</span>
+              </div>
+            )}
+            {hasParticipated && (
+              <div className="inline-flex items-center gap-2 px-4 py-3 bg-neutral-50 rounded-xl text-neutral-500 font-sans text-[13px] font-semibold">
+                <Unlock size={18} />
+                <span>¡Galería desbloqueada!</span>
+              </div>
+            )}
           </div>
+        </section>
+
+        {/* User Participation Box */}
+        {hasParticipated && userPhoto && (
+          <section className="mb-12">
+            <h3 className="font-headline text-2xl text-black font-medium mb-6">Tu Recuerdo Subido</h3>
+            <div className="bg-white rounded-3xl border border-black/5 p-4 md:p-6 flex flex-col md:flex-row gap-6 items-center shadow-sm">
+              <div className="w-full md:w-[200px] rounded-xl overflow-hidden relative group bg-black/5 flex items-center justify-center">
+                <img
+                  src={userPhoto.file_url}
+                  alt="Tu foto subida"
+                  className="w-full max-h-[250px] object-contain rounded-xl"
+                />
+              </div>
+              <div className="flex-1 flex flex-col justify-center items-start w-full">
+                <div className="flex items-center gap-2 mb-2 text-neutral-600">
+                  <CheckCircle size={18} />
+                  <span className="font-sans text-base font-medium">Foto subida con éxito</span>
+                </div>
+                <p className="font-sans text-[13px] font-semibold text-neutral-400 mb-6">
+                  {new Date(userPhoto.created_at).toLocaleDateString()}
+                </p>
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="px-6 py-3 rounded-full border border-black/5 bg-transparent text-black font-sans text-[15px] font-medium hover:bg-neutral-50 transition-colors flex items-center gap-2"
+                >
+                  <Camera size={18} />
+                  Subir otra foto
+                </button>
+              </div>
+            </div>
+          </section>
         )}
 
-        {/* Galería de Fotos */}
-        {photos.length === 0 ? (
-          <div className="py-16 text-center space-y-2 text-neutral-400">
-            <p className="font-sans text-xs">Nadie ha participado aún.</p>
-            <p className="font-sans text-[11px]">¡Sé el primero en subir un recuerdo para este reto!</p>
+        {/* Unlocked Community Photo Gallery */}
+        <section>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+            <h3 className="font-headline text-2xl text-black font-medium">Muro de Recuerdos del Reto</h3>
+            <span className="font-sans text-[13px] text-neutral-500 uppercase tracking-wider font-semibold">
+              {photos.length} Fotos
+            </span>
           </div>
-        ) : (
-          <div className="relative">
-            {/* Mosaico de fotos */}
-            <div className="columns-2 sm:columns-3 md:columns-4 gap-4 space-y-4">
-              {photos.map((photo, idx) => {
-                // Extraer el nombre del autor (soporta diferentes nombres de columnas)
-                const authorName = 
-                  photo.event_participants?.display_name || 
-                  'Alguien';
 
-                return (
-                  <div
-                    key={photo.id || idx}
-                    className="relative break-inside-avoid rounded-3xl overflow-hidden shadow-sm border border-black/5 group hover:shadow-md transition-all duration-300"
-                  >
-                    <img
-                      src={photo.file_url}
-                      alt="Recuerdo del reto"
-                      className={`w-full h-auto object-cover transition-transform duration-500 ${!hasParticipated ? 'blur-xl scale-110' : 'group-hover:scale-105'}`}
-                    />
-                    
-                    {/* Botón individual de desbloqueo (si no ha participado) */}
-                    {!hasParticipated && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/10">
-                        <button
-                          onClick={() => setIsUploadModalOpen(true)}
-                          className="px-4 py-2.5 rounded-full bg-white text-black font-sans text-xs font-bold shadow-xl hover:scale-105 active:scale-95 transition-all"
-                        >
-                          Desbloquear
-                        </button>
-                      </div>
-                    )}
-                    
-                    {/* Firma de Autor (Oculta si no has participado) */}
-                    {hasParticipated && (
-                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                        <p className="text-white font-sans text-xs font-semibold truncate drop-shadow-md">
-                          {authorName}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+          <MediaGallery 
+            photos={photos} 
+            emptyStateMessage="Nadie ha participado aún. ¡Sé el primero en subir un recuerdo para este reto!"
+            blurImage={!hasParticipated}
+            onUnlock={() => setIsUploadModalOpen(true)}
+          />
+        </section>
+      </main>
 
       {/* Botón Flotante */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
@@ -168,7 +221,7 @@ export default function MissionDetailView() {
       </div>
 
       {/* Modal de Subida (Recibe el albumId específico) */}
-      <UploadMediaModal 
+      <UploadMediaModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         eventId={event?.id}
