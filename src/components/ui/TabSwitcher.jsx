@@ -23,7 +23,7 @@ export default function TabSwitcher({ activeTab, onTabChange }) {
             : 'text-neutral-500 hover:text-[#1A1A1A]'
         }`}
       >
-        Crear Cuenta
+        Entrar como Invitado
       </button>
     </div>
   );

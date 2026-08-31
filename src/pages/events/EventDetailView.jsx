@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import EventHeader from '../../components/event/EventHeader';
-import EventGalleryFeed from '../../components/event/EventGalleryFeed';
-import UploadMediaModal from '../../components/event/UploadMediaModal';
-import { Loader2, Plus, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Loader2, X } from "lucide-react";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../context/AuthContext";
+import useEventParticipant from "../../hooks/useEventParticipant";
+import EventHeader from "../../components/event/EventHeader";
+import EventGalleryFeed from "../../components/event/EventGalleryFeed";
+import UploadMediaModal from "../../components/event/UploadMediaModal";
+import JoinEventModal from "../../components/event/JoinEventModal";
+import GuestAuthModal from "../../components/event/GuestAuthModal";
 
 export default function EventDetailView() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { user, signIn, signUp, signInWithGoogle, signOut } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState(null);
@@ -16,73 +21,78 @@ export default function EventDetailView() {
   const [albums, setAlbums] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [activeTab, setActiveTab] = useState('feed');
+  const [activeTab, setActiveTab] = useState("feed");
   const [showQRModal, setShowQRModal] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
+  const [guestModalOpen, setGuestModalOpen] = useState(false);
+
+  const {
+    participant,
+    isParticipant,
+    isBanned,
+    loading: loadingParticipant,
+    joinAsUser,
+    joinAsGuest,
+  } = useEventParticipant(event?.id);
 
   const fetchPhotos = async (eventId) => {
     if (!eventId) return;
     try {
       const { data, error } = await supabase
-        .from('media')
-        .select('*, event_participants!media_participant_id_fkey(*)')
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: false });
-      
+        .from("media")
+        .select("*, event_participants!media_participant_id_fkey(*)")
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
       setPhotos(data || []);
     } catch (error) {
-      console.error('Error al cargar fotos:', error);
+      console.error("Error al cargar fotos:", error);
     }
   };
 
-  // 1. CARGA DE DATOS DESDE SUPABASE AL ENTRAR AL EVENTO
   useEffect(() => {
     async function loadEventData() {
       if (!slug) return;
       setLoading(true);
       try {
-        // A. Consultar el evento por slug
         const { data: eventData, error: eventErr } = await supabase
-          .from('events')
-          .select('*')
-          .eq('slug', slug)
+          .from("events")
+          .select("*")
+          .eq("slug", slug)
           .single();
 
         if (eventErr) throw eventErr;
         setEvent(eventData);
 
-        // B. Consultar las etapas (schedules) asociadas
         const { data: schedData } = await supabase
-          .from('event_schedules')
-          .select('*')
-          .eq('event_id', eventData.id)
-          .order('start_time', { ascending: true });
+          .from("event_schedules")
+          .select("*")
+          .eq("event_id", eventData.id)
+          .order("start_time", { ascending: true });
         setSchedules(schedData || []);
 
-        // C. Consultar los retos (challenges) asociados
-        const { data: albumsData } = await supabase
-          .from('event_challenges')
-          .select('*')
-          .eq('event_id', eventData.id)
-          .order('created_at', { ascending: true });
-        setAlbums(albumsData || []);
+        const { data: challengesData } = await supabase
+          .from("event_challenges")
+          .select("*")
+          .eq("event_id", eventData.id)
+          .order("created_at", { ascending: true });
+        setAlbums(challengesData || []);
 
-        // E. Consultar configuración del evento (Settings)
         const { data: settingsData } = await supabase
-          .from('event_settings')
-          .select('*')
-          .eq('event_id', eventData.id)
+          .from("event_settings")
+          .select("*")
+          .eq("event_id", eventData.id)
           .single();
+
         if (settingsData) {
           setSettings(settingsData);
         }
 
-        // D. Cargar fotos
         await fetchPhotos(eventData.id);
-
       } catch (error) {
-        console.error('Error al cargar evento:', error);
+        console.error("Error al cargar evento:", error);
       } finally {
         setLoading(false);
       }
@@ -91,67 +101,115 @@ export default function EventDetailView() {
     loadEventData();
   }, [slug]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!event || !user || isParticipant || isBanned || loadingParticipant) {
+      setJoinModalOpen(false);
+      return;
+    }
+
+    setJoinModalOpen(true);
+  }, [event, user, isParticipant, isBanned, loadingParticipant]);
+
+  useEffect(() => {
+    if (!event || user || isParticipant || isBanned || loadingParticipant) {
+      setGuestModalOpen(false);
+      return;
+    }
+
+    const guestKey = `innerpov_guest_${event.id}`;
+    const guestToken = localStorage.getItem(guestKey);
+
+    if (!guestToken) {
+      setGuestModalOpen(true);
+    }
+  }, [event, user, isParticipant, isBanned, loadingParticipant]);
+
+  if (loading || loadingParticipant) {
     return (
       <div className="min-h-screen bg-[#fdf8f8] flex flex-col items-center justify-center gap-3">
         <Loader2 size={28} className="animate-spin text-black" />
-        <span className="font-sans text-xs text-neutral-400">Cargando experiencia...</span>
+        <span className="font-sans text-xs text-neutral-400">
+          Cargando experiencia...
+        </span>
       </div>
     );
   }
 
-  // URL del QR del evento
+  if (isBanned || participant?.status === "banned") {
+    return (
+      <div className="min-h-screen bg-[#fdf8f8] flex items-center justify-center p-6">
+        <div className="max-w-lg w-full bg-white border border-red-200 rounded-[28px] p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+            <X size={30} />
+          </div>
+          <h1 className="font-headline text-3xl text-[#1c1b1b] font-medium mb-2">
+            Acceso bloqueado
+          </h1>
+          <p className="font-sans text-sm text-neutral-600 leading-relaxed">
+            Has sido removido de este evento por un moderador y no puedes entrar
+            a la galería ni participar en sus retos.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const eventPublicUrl = `${window.location.origin}/e/${event?.slug}`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-    eventPublicUrl
+    eventPublicUrl,
   )}`;
 
+  const isLocked = !isParticipant;
+
   return (
-    <div className="min-h-screen bg-[#fdf8f8] font-sans pb-28">
-      {/* Encabezado del Evento */}
-      <EventHeader
-        event={event}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenQR={() => setShowQRModal(true)}
-        onUploadClick={() => setIsUploadModalOpen(true)}
-        onBack={() => navigate('/')}
-      />
-
-      {/* Contenido Dinámico de la Pestaña */}
-      <main>
-        <EventGalleryFeed
+    <div
+      className={`min-h-screen bg-[#fdf8f8] font-sans pb-28 ${isLocked ? "overflow-hidden" : ""}`}
+    >
+      <div
+        className={
+          isLocked ? "filter blur-md pointer-events-none select-none" : ""
+        }
+      >
+        <EventHeader
+          event={event}
           activeTab={activeTab}
-          schedules={schedules}
-          albums={albums}
-          photos={photos} // Aquí se pasan las fotos de la tabla de fotos
-          slug={slug}
+          setActiveTab={setActiveTab}
+          onOpenQR={() => setShowQRModal(true)}
+          onUploadClick={() => setIsUploadModalOpen(true)}
+          onBack={() => navigate("/")}
         />
-      </main>
 
-      {/* BOTÓN FLOTANTE INFERIOR ESTILO iOS (Floating Action Button)
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-        <button
-          onClick={() => setIsUploadModalOpen(true)}
-          className="px-6 py-3.5 rounded-full bg-blue-600 text-white font-sans text-xs font-semibold shadow-2xl flex items-center gap-2 hover:bg-blue-700 active:scale-95 transition-all"
-        >
-          <Plus size={18} />
-          <span>Subir</span>
-        </button>
-      </div> */}
+        <main>
+          <EventGalleryFeed
+            activeTab={activeTab}
+            schedules={schedules}
+            albums={albums}
+            photos={photos}
+            slug={slug}
+          />
+        </main>
+      </div>
 
-      {/* MODAL CÓDIGO QR */}
       {showQRModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-black/5 pb-2">
-              <h3 className="font-headline text-lg font-medium">QR del Evento</h3>
-              <button onClick={() => setShowQRModal(false)} className="text-neutral-400">
+              <h3 className="font-headline text-lg font-medium">
+                QR del Evento
+              </h3>
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="text-neutral-400"
+              >
                 <X size={18} />
               </button>
             </div>
             <div className="w-48 h-48 bg-white p-2 rounded-2xl border border-black/5 mx-auto">
-              <img src={qrImageUrl} alt="QR" className="w-full h-full object-contain" />
+              <img
+                src={qrImageUrl}
+                alt="QR"
+                className="w-full h-full object-contain"
+              />
             </div>
             <p className="font-sans text-xs text-neutral-500">
               Muestra este código a tus invitados para ingresar al instante.
@@ -160,13 +218,49 @@ export default function EventDetailView() {
         </div>
       )}
 
-      {/* MODAL DE SUBIDA DE MEDIA */}
-      <UploadMediaModal 
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        eventId={event?.id}
-        onSuccess={() => fetchPhotos(event?.id)}
-      />
+      {isUploadModalOpen && (
+        <UploadMediaModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          eventId={event?.id}
+          onSuccess={() => fetchPhotos(event?.id)}
+        />
+      )}
+
+      {!isParticipant && user && joinModalOpen && (
+        <JoinEventModal
+          event={event}
+          user={user}
+          loading={loadingParticipant}
+          onJoin={async () => {
+            await joinAsUser();
+            setJoinModalOpen(false);
+          }}
+          onSignOut={async () => {
+            await signOut();
+          }}
+        />
+      )}
+
+      {!isParticipant && !user && guestModalOpen && (
+        <GuestAuthModal
+          event={event}
+          loading={loadingParticipant}
+          onGuestJoin={async (name) => {
+            await joinAsGuest(name);
+            setGuestModalOpen(false);
+          }}
+          onGoogleAuth={async () => {
+            await signInWithGoogle(window.location.href);
+          }}
+          onEmailSignIn={async ({ email, password }) => {
+            await signIn({ email, password });
+          }}
+          onEmailSignUp={async ({ email, password, fullName }) => {
+            await signUp({ email, password, fullName });
+          }}
+        />
+      )}
     </div>
   );
 }

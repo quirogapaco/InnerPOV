@@ -73,13 +73,13 @@ export function AuthProvider({ children }) {
   };
 
   // C. Iniciar Sesión / Registro con Google OAuth
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (redirectTo = window.location.origin) => {
     ensureSupabaseConfigured();
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}`,
+        redirectTo,
       },
     });
 
