@@ -9,6 +9,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // 1. Obtener la sesión activa al cargar la app
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -28,10 +33,18 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const ensureSupabaseConfigured = () => {
+    if (!supabase) {
+      throw new Error('Falta configurar Supabase: crea un archivo .env.local con VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY');
+    }
+  };
+
   // --- MÉTODOS MODULARES DE AUTENTICACIÓN ---
 
   // A. Registro Directo con Email y Password (Sin verificación de correo)
   const signUp = async ({ email, password, fullName }) => {
+    ensureSupabaseConfigured();
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -48,6 +61,8 @@ export function AuthProvider({ children }) {
 
   // B. Iniciar Sesión Tradicional
   const signIn = async ({ email, password }) => {
+    ensureSupabaseConfigured();
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -59,6 +74,8 @@ export function AuthProvider({ children }) {
 
   // C. Iniciar Sesión / Registro con Google OAuth
   const signInWithGoogle = async () => {
+    ensureSupabaseConfigured();
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -72,6 +89,8 @@ export function AuthProvider({ children }) {
 
   // D. Cerrar Sesión
   const signOut = async () => {
+    ensureSupabaseConfigured();
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };

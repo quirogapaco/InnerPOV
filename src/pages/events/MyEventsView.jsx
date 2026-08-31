@@ -1,67 +1,87 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LayoutGrid, List, ArrowRight, QrCode, Loader2, AlertTriangle } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import MyEventsHeader from '../../components/event/MyEventsHeader';
 import EventCard from '../../components/event/EventCard';
-import { LayoutGrid, List, ArrowRight, QrCode } from 'lucide-react';
-
-const MOCK_EVENTS = [
-  {
-    id: '1',
-    title: 'Boda de Sofía & Mateo',
-    coverUrl:
-      'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
-    category: 'Boda',
-    status: 'active',
-    location: 'Quinta San Luis, Ambato',
-    date: '28 Jul 2026',
-    guests: 120,
-    photos: 340,
-    stages: 4,
-  },
-  {
-    id: '2',
-    title: 'Boda de Carlos & Elena',
-    coverUrl:
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800',
-    category: 'Boda',
-    status: 'draft',
-    location: 'En proceso de configuración',
-    date: '15 Oct 2026',
-    guests: 0,
-    photos: 0,
-    stages: 0,
-  },
-  {
-    id: '3',
-    title: 'Aniversario de Oro - Familia Quiroga',
-    coverUrl:
-      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&q=80&w=800',
-    category: 'Aniversario',
-    status: 'archived',
-    location: 'Quito, Ecuador',
-    date: '12 Dec 2025',
-    guests: 85,
-    photos: 842,
-    stages: 3,
-  },
-];
 
 export default function MyEventsView({ onNewEventClick }) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredEvents = MOCK_EVENTS.filter((event) =>
-    event.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchMyEvents = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) throw userError;
+        if (!user) {
+          setEvents([]);
+          return;
+        }
+
+        const { data, error: eventsError } = await supabase
+          .from('events')
+          .select(`
+            id,
+            title,
+            slug,
+            cover_photo_url,
+            event_date,
+            location_name,
+            status,
+            created_by,
+            custom_type_name,
+            event_types ( name, icon ),
+            event_settings ( max_guests, max_photos_per_guest ),
+            event_schedules ( id, title, slug, start_time, end_time ),
+            event_challenges ( id, title, slug )
+          `)
+          .eq('created_by', user.id)
+          .order('event_date', { ascending: false });
+
+        if (eventsError) throw eventsError;
+
+        setEvents(data || []);
+      } catch (fetchError) {
+        console.error('Error al cargar eventos del usuario:', fetchError);
+        setError(fetchError.message || 'No se pudieron cargar tus eventos.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyEvents();
+  }, []);
+
+  const filteredEvents = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return events;
+
+    return events.filter((event) => {
+      const title = (event.title || '').toLowerCase();
+      const location = (event.location_name || '').toLowerCase();
+      return title.includes(term) || location.includes(term);
+    });
+  }, [events, searchTerm]);
 
   return (
     <div className="space-y-6 md:space-y-8 text-left">
-      {/* 1. Encabezado exclusivo de Mis Eventos con Buscador y Crear Evento */}
       <MyEventsHeader
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         onNewEventClick={onNewEventClick}
       />
 
-      {/* 2. Título de la vista */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 className="font-headline text-3xl md:text-4xl font-medium text-black">
@@ -82,22 +102,38 @@ export default function MyEventsView({ onNewEventClick }) {
         </div>
       </div>
 
-      {/* 3. Rejilla Responsive de Tarjetas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))
-        ) : (
-          <div className="col-span-full py-16 text-center text-neutral-400 bg-white rounded-3xl border border-dashed border-neutral-200 p-8">
-            <p className="font-sans text-sm">
-              No se encontraron eventos con "{searchTerm}"
-            </p>
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center gap-3 bg-white rounded-3xl border border-black/5 py-16 text-neutral-500">
+          <Loader2 size={20} className="animate-spin text-black" />
+          <span className="font-sans text-sm">Cargando tus eventos...</span>
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-3xl p-5 text-red-700">
+          <AlertTriangle size={18} />
+          <span className="font-sans text-sm">{error}</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEvents.length > 0 ? (
+            filteredEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                onClick={() => event.slug && navigate(`/e/${event.slug}`)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full py-16 text-center text-neutral-400 bg-white rounded-3xl border border-dashed border-neutral-200 p-8">
+              <p className="font-sans text-sm">
+                {searchTerm
+                  ? `No se encontraron eventos con "${searchTerm}"`
+                  : 'Todavía no tienes eventos creados.'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* 4. Banner Promocional Inferior */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
         <div className="lg:col-span-2 bg-[#e4dfd7]/20 rounded-[24px] p-6 sm:p-8 border border-black/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="max-w-md">

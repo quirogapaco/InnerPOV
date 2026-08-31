@@ -128,10 +128,53 @@ export default function CreateEventPage({ onCancel, onEventCreated }) {
   };
 
   // 🚀 PROCESO DE PUBLICACIÓN TOTAL
+  const timeToMinutes = (timeStr) => {
+    if (!timeStr) return null;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const getScheduleTimeMeta = (startTime, endTime) => {
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
+
+    if (startMinutes === null || endMinutes === null) {
+      return {
+        crossesMidnight: false,
+        isValidDuration: false,
+        durationMinutes: 0,
+        nextDayOffset: 0,
+      };
+    }
+
+    const crossesMidnight = endMinutes <= startMinutes;
+    const effectiveEndMinutes = crossesMidnight ? endMinutes + 1440 : endMinutes;
+    const durationMinutes = effectiveEndMinutes - startMinutes;
+
+    return {
+      crossesMidnight,
+      isValidDuration: durationMinutes >= 15 && startMinutes !== endMinutes,
+      durationMinutes,
+      nextDayOffset: crossesMidnight ? 1 : 0,
+    };
+  };
+
+  const formatScheduleIso = (baseDate, timeValue, dayOffset = 0) => {
+    if (!baseDate || !timeValue) return null;
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    const date = new Date(`${baseDate}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + dayOffset);
+    date.setUTCHours(hours, minutes, 0, 0);
+    return date.toISOString();
+  };
+
   const handlePublishEvent = async () => {
     setIsSubmitting(true);
+
+    let uploadedCoverPath = null;
+
     try {
-      // 0. OBTENER Y VERIFICAR EL USUARIO AUTENTICADO
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         throw new Error('No se encontró un usuario autenticado activo. Por favor, inicia sesión de nuevo.');
@@ -139,109 +182,91 @@ export default function CreateEventPage({ onCancel, onEventCreated }) {
 
       let finalCoverUrl = formData.coverPhotoUrl;
 
-      // 1. SUBIDA DE LA IMAGEN A STORAGE
       if (formData.coverFile) {
         const file = formData.coverFile;
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `covers/${fileName}`;
+        uploadedCoverPath = `covers/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('event-covers')
-          .upload(filePath, file);
+          .upload(uploadedCoverPath, file);
 
         if (uploadError) throw uploadError;
 
         const {
           data: { publicUrl },
-        } = supabase.storage.from('event-covers').getPublicUrl(filePath);
+        } = supabase.storage.from('event-covers').getPublicUrl(uploadedCoverPath);
 
         finalCoverUrl = publicUrl;
       }
 
-      // 2. CREACIÓN DEL REGISTRO PADRE EN 'events'
-      const { data: newEvent, error: eventError } = await supabase
-        .from('events')
-        .insert({
-          title: formData.title,
-          slug: formData.slug,
-          event_date: formData.eventDate,
-          location_name: formData.locationName,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
-          cover_photo_url: finalCoverUrl,
-          event_type_id: formData.isCustomType ? null : formData.eventTypeId,
-          custom_type_name: formData.isCustomType ? formData.customTypeName : null,
-          status: 'active',
-        })
-        .select()
-        .single();
-
-      if (eventError) throw eventError;
-
-      // 2b. REGISTRO EN 'event_members' (CREADOR COMO ADMIN)
-      const { error: memberError } = await supabase
-        .from('event_members')
-        .insert({
-          event_id: newEvent.id,
-          user_id: user.id,
-          role: 'ADMIN',
-        });
-
-      if (memberError) throw memberError;
-
-      // 3. REGISTRO EN 'event_settings'
-      const { error: settingsError } = await supabase
-        .from('event_settings')
-        .insert({
-          event_id: newEvent.id,
-          max_guests: formData.maxGuests,
-          max_photos_per_guest: formData.maxPhotosPerGuest,
-          allow_videos: formData.allowVideos,
-          require_moderation: formData.requireModeration,
-        });
-
-      if (settingsError) throw settingsError;
-
-      // 4. REGISTROS EN 'event_schedules'
       const activeSchedules = (formData.schedules || []).filter((s) => s.active);
-      if (activeSchedules.length > 0) {
-        const schedulesToInsert = activeSchedules.map((s) => ({
-          event_id: newEvent.id,
+      const schedulesPayload = activeSchedules.map((s) => {
+        const scheduleMeta = getScheduleTimeMeta(s.startTime, s.endTime);
+
+        if (!scheduleMeta.isValidDuration) {
+          throw new Error(`La etapa "${s.title}" debe tener una duración mínima de 15 minutos.`);
+        }
+
+        return {
           title: s.title,
           slug: s.slug,
-          start_time: formData.eventDate ? `${formData.eventDate}T${s.startTime}:00Z` : null,
-          end_time: formData.eventDate ? `${formData.eventDate}T${s.endTime}:00Z` : null,
-        }));
+          start_time: formData.eventDate ? formatScheduleIso(formData.eventDate, s.startTime, 0) : null,
+          end_time: formData.eventDate
+            ? formatScheduleIso(formData.eventDate, s.endTime, scheduleMeta.nextDayOffset)
+            : null,
+        };
+      });
 
-        const { error: schedError } = await supabase
-          .from('event_schedules')
-          .insert(schedulesToInsert);
+      const missionsPayload = (formData.missions || []).map((m) => ({
+        name: m.name,
+        slug: m.slug,
+        description: m.description,
+        is_system_default: m.is_system_default ?? false,
+      }));
 
-        if (schedError) throw schedError;
-      }
+      const { data: createdEvent, error: rpcError } = await supabase.rpc('create_event_with_data', {
+        p_title: formData.title,
+        p_slug: formData.slug,
+        p_event_date: formData.eventDate,
+        p_location_name: formData.locationName,
+        p_latitude: formData.latitude,
+        p_longitude: formData.longitude,
+        p_cover_photo_url: finalCoverUrl,
+        p_event_type_id: formData.isCustomType ? null : formData.eventTypeId,
+        p_custom_type_name: formData.isCustomType ? formData.customTypeName : null,
+        p_status: 'active',
+        p_max_guests: formData.maxGuests,
+        p_max_photos_per_guest: formData.maxPhotosPerGuest,
+        p_allow_videos: formData.allowVideos,
+        p_require_moderation: formData.requireModeration,
+        p_user_id: user.id,
+        p_schedules: schedulesPayload,
+        p_missions: missionsPayload,
+      });
 
-      // 5. REGISTROS EN 'albums'
-      if (formData.missions && formData.missions.length > 0) {
-        const albumsToInsert = formData.missions.map((m) => ({
-          event_id: newEvent.id,
-          name: m.name,
-          slug: m.slug,
-          description: m.description,
-          time_limit_minutes: null,
-          expires_at: null,
-          is_system_default: m.is_system_default ?? false,
-        }));
+      if (rpcError) throw rpcError;
 
-        const { error: albumsError } = await supabase.from('albums').insert(albumsToInsert);
+      const eventResult = Array.isArray(createdEvent) ? createdEvent[0] : createdEvent;
 
-        if (albumsError) throw albumsError;
+      if (!eventResult?.event_id) {
+        throw new Error('La creación del evento no devolvió un identificador válido.');
       }
 
       if (onEventCreated) onEventCreated();
       navigate(`/e/${formData.slug}`);
     } catch (error) {
       console.error('Error al publicar evento:', error);
+
+      if (uploadedCoverPath) {
+        try {
+          await supabase.storage.from('event-covers').remove([uploadedCoverPath]);
+        } catch (cleanupError) {
+          console.error('No se pudo limpiar la imagen subida tras el error:', cleanupError);
+        }
+      }
+
       alert(error.message || 'Ocurrió un error al guardar el evento.');
     } finally {
       setIsSubmitting(false);

@@ -48,9 +48,44 @@ export default function Step3Schedules({ formData, updateFormData }) {
 
   // Helper para convertir "HH:MM" a minutos para ordenar
   const timeToMinutes = (timeStr) => {
-    if (!timeStr) return 0;
+    if (!timeStr) return null;
     const [h, m] = timeStr.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
     return h * 60 + m;
+  };
+
+  const getScheduleTimeMeta = (startTime, endTime) => {
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
+
+    if (startMinutes === null || endMinutes === null) {
+      return {
+        crossesMidnight: false,
+        isValidDuration: false,
+        durationMinutes: 0,
+        nextDayOffset: 0,
+      };
+    }
+
+    const crossesMidnight = endMinutes <= startMinutes;
+    const effectiveEndMinutes = crossesMidnight ? endMinutes + 1440 : endMinutes;
+    const durationMinutes = effectiveEndMinutes - startMinutes;
+
+    return {
+      crossesMidnight,
+      isValidDuration: durationMinutes >= 15 && startMinutes !== endMinutes,
+      durationMinutes,
+      nextDayOffset: crossesMidnight ? 1 : 0,
+    };
+  };
+
+  const formatScheduleDateTime = (baseDate, timeValue, dayOffset = 0) => {
+    if (!baseDate || !timeValue) return null;
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    const date = new Date(`${baseDate}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + dayOffset);
+    date.setUTCHours(hours, minutes, 0, 0);
+    return date.toISOString();
   };
 
   // CONSULTAR TABLAS POR DEFECTO SEGÚN EL EVENT_TYPE_ID
@@ -148,6 +183,11 @@ export default function Step3Schedules({ formData, updateFormData }) {
     e.preventDefault();
     if (!scheduleTitle.trim()) return;
 
+    const scheduleMeta = getScheduleTimeMeta(scheduleStartTime, scheduleEndTime);
+    if (!scheduleMeta.isValidDuration) {
+      return;
+    }
+
     if (editingScheduleId) {
       // Editar etapa existente
       setSchedules((prev) =>
@@ -216,10 +256,12 @@ export default function Step3Schedules({ formData, updateFormData }) {
         return 'Por favor ingresa horas válidas para todas las etapas seleccionadas.';
       }
 
-      const adjustedAEnd = aEnd < aStart ? aEnd + 1440 : aEnd;
-      if (adjustedAEnd <= aStart) {
-        return `La hora de fin en "${a.title}" debe ser posterior a la hora de inicio.`;
+      const aMeta = getScheduleTimeMeta(a.startTime, a.endTime);
+      if (!aMeta.isValidDuration) {
+        return `La etapa "${a.title}" debe tener una duración mínima de 15 minutos.`;
       }
+
+      const adjustedAEnd = aEnd <= aStart ? aEnd + 1440 : aEnd;
 
       for (let j = i + 1; j < activeSchedules.length; j++) {
         const b = activeSchedules[j];
@@ -227,7 +269,7 @@ export default function Step3Schedules({ formData, updateFormData }) {
         const bEnd = timeToMinutes(b.endTime);
 
         if (bStart === null || bEnd === null) continue;
-        const adjustedBEnd = bEnd < bStart ? bEnd + 1440 : bEnd;
+        const adjustedBEnd = bEnd <= bStart ? bEnd + 1440 : bEnd;
 
         // Choque de rangos horarios
         if (aStart < adjustedBEnd && adjustedAEnd > bStart) {
@@ -325,54 +367,65 @@ export default function Step3Schedules({ formData, updateFormData }) {
               </div>
             ) : (
               <div className="space-y-3">
-                {sortedSchedules.map((stage) => (
-                  <div
-                    key={stage.id}
-                    className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-all ${
-                      stage.active
-                        ? 'bg-white border-black/20 shadow-sm'
-                        : 'bg-[#F4F1EE]/50 border-black/5 opacity-70'
-                    }`}
-                  >
-                    {/* Checkbox + Título + Horas */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <input
-                        type="checkbox"
-                        checked={stage.active}
-                        onChange={(e) => handleToggleScheduleActive(stage.id, e.target.checked)}
-                        className="w-4 h-4 rounded border-neutral-300 text-black focus:ring-black cursor-pointer flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className={`font-sans text-xs font-semibold truncate ${stage.active ? 'text-[#1c1b1b]' : 'text-neutral-500'}`}>
-                          {stage.title}
-                        </h4>
-                        <span className="font-mono text-[11px] text-neutral-400 block">
-                          {stage.startTime} - {stage.endTime}
-                        </span>
+                {sortedSchedules.map((stage) => {
+                  const stageMeta = getScheduleTimeMeta(stage.startTime, stage.endTime);
+
+                  return (
+                    <div
+                      key={stage.id}
+                      className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-all ${
+                        stage.active
+                          ? 'bg-white border-black/20 shadow-sm'
+                          : 'bg-[#F4F1EE]/50 border-black/5 opacity-70'
+                      }`}
+                    >
+                      {/* Checkbox + Título + Horas */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={stage.active}
+                          onChange={(e) => handleToggleScheduleActive(stage.id, e.target.checked)}
+                          className="w-4 h-4 rounded border-neutral-300 text-black focus:ring-black cursor-pointer flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className={`font-sans text-xs font-semibold truncate ${stage.active ? 'text-[#1c1b1b]' : 'text-neutral-500'}`}>
+                            {stage.title}
+                          </h4>
+                          <div className="flex items-center gap-2 flex-wrap mt-1">
+                            <span className="font-mono text-[11px] text-neutral-400 block">
+                              {stage.startTime} - {stage.endTime}
+                            </span>
+                            {stageMeta.crossesMidnight && (
+                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                                +1 día
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botones de Acción (Editar / Eliminar) */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditSchedule(stage)}
+                          className="p-1.5 rounded-lg text-neutral-400 hover:text-black hover:bg-neutral-100 transition-colors"
+                          title="Editar etapa"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSchedule(stage)}
+                          className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Eliminar etapa"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
-
-                    {/* Botones de Acción (Editar / Eliminar) */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditSchedule(stage)}
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-black hover:bg-neutral-100 transition-colors"
-                        title="Editar etapa"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSchedule(stage)}
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        title="Eliminar etapa"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -542,15 +595,54 @@ export default function Step3Schedules({ formData, updateFormData }) {
                   <label className="font-sans text-xs font-semibold uppercase tracking-wider text-neutral-600">
                     Hora de Fin
                   </label>
-                  <input
-                    type="time"
-                    required
-                    value={scheduleEndTime}
-                    onChange={(e) => setScheduleEndTime(e.target.value)}
-                    className="w-full bg-[#F4F1EE] border-none rounded-xl p-3 font-sans text-xs text-black outline-none focus:ring-1 focus:ring-black focus:bg-white font-mono text-center"
-                  />
+                  <div className="relative">
+                    <input
+                      type="time"
+                      required
+                      value={scheduleEndTime}
+                      onChange={(e) => setScheduleEndTime(e.target.value)}
+                      className="w-full bg-[#F4F1EE] border-none rounded-xl p-3 pr-20 font-sans text-xs text-black outline-none focus:ring-1 focus:ring-black focus:bg-white font-mono text-center"
+                    />
+                    {(() => {
+                      const scheduleMeta = getScheduleTimeMeta(scheduleStartTime, scheduleEndTime);
+                      if (scheduleMeta.crossesMidnight) {
+                        return (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-semibold text-amber-800">
+                            +1 día
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                 </div>
               </div>
+
+              {scheduleStartTime && scheduleEndTime && (() => {
+                const scheduleMeta = getScheduleTimeMeta(scheduleStartTime, scheduleEndTime);
+
+                if (!scheduleMeta.isValidDuration) {
+                  return (
+                    <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                      <AlertTriangle size={14} />
+                      <span>
+                        La etapa debe durar al menos 15 minutos. Si termina después de la medianoche, el sistema lo gestionará automáticamente como +1 día.
+                      </span>
+                    </div>
+                  );
+                }
+
+                if (scheduleMeta.crossesMidnight) {
+                  return (
+                    <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+                      <Clock size={14} />
+                      <span>Esta etapa concluye en la madrugada del día siguiente.</span>
+                    </div>
+                  );
+                }
+
+                return null;
+              })()}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-black/5">
                 <button

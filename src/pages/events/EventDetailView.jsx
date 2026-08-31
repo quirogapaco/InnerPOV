@@ -115,7 +115,7 @@ export default function EventDetailView() {
         />
       </main>
 
-      {/* BOTÓN FLOTANTE INFERIOR ESTILO iOS (Floating Action Button) */}
+      {/* BOTÓN FLOTANTE INFERIOR ESTILO iOS (Floating Action Button)
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
         <button
           onClick={() => setIsUploadModalOpen(true)}
@@ -124,7 +124,7 @@ export default function EventDetailView() {
           <Plus size={18} />
           <span>Subir</span>
         </button>
-      </div>
+      </div> */}
 
       {/* MODAL CÓDIGO QR */}
       {showQRModal && (
