@@ -5,16 +5,18 @@ import PhotoCard from './PhotoCard';
 import MediaGallery from './MediaGallery';
 import ScheduleCard from './ScheduleCard';
 
-export default function EventGalleryFeed({ activeTab, schedules, albums, photos = [], slug }) {
+export default function EventGalleryFeed({ activeTab, schedules, albums, photos = [], slug, participant, onLike }) {
   const [selectedSchedule, setSelectedSchedule] = useState('all');
 
   // TAB 1: FEED GENERAL (Pinterest Masonry)
   if (activeTab === 'feed') {
     return (
       <div className="w-full max-w-6xl mx-auto px-4 py-6">
-        <MediaGallery 
-          photos={photos} 
-          emptyStateMessage="Aún no hay fotos compartidas en este evento. ¡Sé el primero en subir un recuerdo!" 
+        <MediaGallery
+          photos={photos}
+          participant={participant}
+          onLike={onLike}
+          emptyStateMessage="Aún no hay fotos compartidas en este evento. ¡Sé el primero en subir un recuerdo!"
         />
       </div>
     );

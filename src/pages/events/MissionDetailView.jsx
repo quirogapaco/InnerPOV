@@ -6,6 +6,7 @@ import { ArrowLeft, Camera, Loader2, Plus, MoreHorizontal, Users, Lock, Unlock, 
 import UploadMediaModal from '../../components/event/UploadMediaModal';
 import PhotoCard from '../../components/event/PhotoCard';
 import MediaGallery from '../../components/event/MediaGallery';
+import useEventParticipant from '../../hooks/useEventParticipant';
 
 export default function MissionDetailView() {
   const { slug, albumId } = useParams();
@@ -17,9 +18,9 @@ export default function MissionDetailView() {
   const [album, setAlbum] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [currentParticipantId, setCurrentParticipantId] = useState(null);
+  const { participant } = useEventParticipant(event?.id);
 
-  const fetchMissionData = async () => {
+  const fetchMissionData = async (participantId) => {
     try {
       // 1. Obtener Evento
       const { data: eventData, error: eventErr } = await supabase
@@ -30,19 +31,6 @@ export default function MissionDetailView() {
 
       if (eventErr) throw eventErr;
       setEvent(eventData);
-
-      if (user) {
-        const { data: participantData } = await supabase
-          .from('event_participants')
-          .select('id')
-          .eq('event_id', eventData.id)
-          .eq('user_id', user.id)
-          .single();
-        
-        if (participantData) {
-          setCurrentParticipantId(participantData.id);
-        }
-      }
 
       // 2. Obtener Álbum / Reto
       const { data: albumData, error: albumErr } = await supabase
@@ -63,7 +51,23 @@ export default function MissionDetailView() {
         .order('created_at', { ascending: false });
 
       if (photosErr) throw photosErr;
-      setPhotos(photosData || []);
+      
+      let finalPhotos = photosData || [];
+      if (participantId) {
+        const { data: likesData } = await supabase
+          .from("media_likes")
+          .select("media_id")
+          .eq("participant_id", participantId);
+          
+        const likedIds = new Set(likesData?.map(l => l.media_id) || []);
+        
+        finalPhotos = finalPhotos.map(p => ({
+          ...p,
+          liked_by_me: likedIds.has(p.id)
+        }));
+      }
+      
+      setPhotos(finalPhotos);
 
     } catch (error) {
       console.error('Error cargando los datos del reto:', error);
@@ -73,8 +77,17 @@ export default function MissionDetailView() {
   };
 
   useEffect(() => {
-    fetchMissionData();
-  }, [slug, albumId]);
+    fetchMissionData(participant?.id);
+  }, [slug, albumId, participant?.id]);
+
+  const handlePhotoLike = (photoId, isLiked, newCount) => {
+    setPhotos(prevPhotos => prevPhotos.map(p => {
+      if (p.id === photoId) {
+        return { ...p, liked_by_me: isLiked, likes_count: newCount };
+      }
+      return p;
+    }));
+  };
 
   if (loading) {
     return (
@@ -87,11 +100,11 @@ export default function MissionDetailView() {
 
   // Lógica BeReal: Comprobar si el usuario actual ha subido al menos una foto
   const hasParticipated = photos.some(
-    (p) => currentParticipantId && p.participant_id === currentParticipantId
+    (p) => participant?.id && p.participant_id === participant.id
   );
 
   const userPhoto = photos.find(
-    (p) => currentParticipantId && p.participant_id === currentParticipantId
+    (p) => participant?.id && p.participant_id === participant.id
   );
 
   return (
@@ -210,6 +223,8 @@ export default function MissionDetailView() {
             emptyStateMessage="Nadie ha participado aún. ¡Sé el primero en subir un recuerdo para este reto!"
             blurImage={!hasParticipated}
             onUnlock={() => setIsUploadModalOpen(true)}
+            participant={participant}
+            onLike={handlePhotoLike}
           />
         </section>
       </main>

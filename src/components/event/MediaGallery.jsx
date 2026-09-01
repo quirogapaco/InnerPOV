@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Rows3, Loader2 } from 'lucide-react';
 import PhotoCard from './PhotoCard';
 
-export default function MediaGallery({ photos = [], emptyStateMessage = "Aún no hay fotos.", blurImage = false, onUnlock }) {
+export default function MediaGallery({ photos = [], emptyStateMessage = "Aún no hay fotos.", blurImage = false, onUnlock, participant, onLike }) {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'feed'
   const [columnsCount, setColumnsCount] = useState(2);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -109,7 +109,7 @@ export default function MediaGallery({ photos = [], emptyStateMessage = "Aún no
             {masonryColumns.map((column, colIdx) => (
               <div key={colIdx} className="flex-1 flex flex-col gap-1 min-w-0">
                 {column.map((photo, idx) => (
-                  <PhotoCard key={photo.id || idx} photo={photo} blurImage={blurImage} onUnlock={onUnlock} viewMode={viewMode} />
+                  <PhotoCard key={photo.id || idx} photo={photo} blurImage={blurImage} onUnlock={onUnlock} viewMode={viewMode} participant={participant} onLike={onLike} />
                 ))}
               </div>
             ))}
@@ -118,7 +118,7 @@ export default function MediaGallery({ photos = [], emptyStateMessage = "Aún no
       ) : (
         <div className="flex flex-col gap-8 max-w-xl mx-auto w-full">
           {photos.map((photo, idx) => (
-            <PhotoCard key={photo.id || idx} photo={photo} blurImage={blurImage} onUnlock={onUnlock} viewMode={viewMode} />
+            <PhotoCard key={photo.id || idx} photo={photo} blurImage={blurImage} onUnlock={onUnlock} viewMode={viewMode} participant={participant} onLike={onLike} />
           ))}
         </div>
       )}

@@ -83,25 +83,36 @@ export default function useEventParticipant(eventId) {
     if (!eventId || !user) return null;
 
     try {
-      const { data, error } = await supabase
+      // Check if already joined
+      let { data, error } = await supabase
         .from('event_participants')
-        .upsert(
-          {
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!data) {
+        // Insert if not joined
+        const { data: newData, error: insertError } = await supabase
+          .from('event_participants')
+          .insert({
             event_id: eventId,
             user_id: user.id,
             display_name: user.user_metadata?.full_name || user.email || 'Invitado',
             role: 'GUEST',
             status: 'active',
-          },
-          {
-            onConflict: 'event_id,user_id',
-            ignoreDuplicates: false,
-          }
-        )
-        .select()
-        .maybeSingle();
-
-      if (error) throw error;
+          })
+          .select()
+          .maybeSingle();
+          
+        if (insertError) {
+          console.error("Supabase insert error:", insertError);
+          throw insertError;
+        }
+        data = newData;
+      } else if (error) {
+        throw error;
+      }
 
       setParticipant(data);
       setIsParticipant(Boolean(data));
@@ -122,23 +133,20 @@ export default function useEventParticipant(eventId) {
     try {
       const { data, error } = await supabase
         .from('event_participants')
-        .upsert(
-          {
-            event_id: eventId,
-            session_token: token,
-            display_name: normalizedName,
-            role: 'GUEST',
-            status: 'active',
-          },
-          {
-            onConflict: 'event_id,session_token',
-            ignoreDuplicates: false,
-          }
-        )
+        .insert({
+          event_id: eventId,
+          session_token: token,
+          display_name: normalizedName,
+          role: 'GUEST',
+          status: 'active',
+        })
         .select()
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase insert error:", error);
+        throw error;
+      }
 
       localStorage.setItem(getGuestStorageKey(eventId), token);
       setParticipant(data);

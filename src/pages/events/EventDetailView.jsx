@@ -57,7 +57,7 @@ export default function EventDetailView() {
     }
   };
 
-  const fetchPhotos = async (eventId) => {
+  const fetchPhotos = async (eventId, currentParticipantId) => {
     if (!eventId) return;
     try {
       const { data, error } = await supabase
@@ -67,7 +67,24 @@ export default function EventDetailView() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPhotos(data || []);
+      
+      let photosData = data || [];
+      
+      if (currentParticipantId) {
+        const { data: likesData } = await supabase
+          .from("media_likes")
+          .select("media_id")
+          .eq("participant_id", currentParticipantId);
+          
+        const likedIds = new Set(likesData?.map(l => l.media_id) || []);
+        
+        photosData = photosData.map(p => ({
+          ...p,
+          liked_by_me: likedIds.has(p.id)
+        }));
+      }
+      
+      setPhotos(photosData);
     } catch (error) {
       console.error("Error al cargar fotos:", error);
     }
@@ -111,8 +128,8 @@ export default function EventDetailView() {
           setSettings(settingsData);
         }
 
-        await fetchPhotos(eventData.id);
-        await fetchParticipants(eventData.id);
+        fetchParticipants(eventData.id);
+        fetchPhotos(eventData.id, participant?.id);
       } catch (error) {
         console.error("Error al cargar evento:", error);
       } finally {
@@ -121,7 +138,7 @@ export default function EventDetailView() {
     }
 
     loadEventData();
-  }, [slug]);
+  }, [slug, participant?.id]);
 
   useEffect(() => {
     if (!event || !user || isParticipant || isBanned || loadingParticipant) {
@@ -145,6 +162,15 @@ export default function EventDetailView() {
       setGuestModalOpen(true);
     }
   }, [event, user, isParticipant, isBanned, loadingParticipant]);
+
+  const handlePhotoLike = (photoId, isLiked, newCount) => {
+    setPhotos(prevPhotos => prevPhotos.map(p => {
+      if (p.id === photoId) {
+        return { ...p, liked_by_me: isLiked, likes_count: newCount };
+      }
+      return p;
+    }));
+  };
 
   if (loading || loadingParticipant) {
     return (
@@ -221,6 +247,8 @@ export default function EventDetailView() {
             albums={albums}
             photos={photos}
             slug={slug}
+            participant={participant}
+            onLike={handlePhotoLike}
           />
         </main>
       </div>

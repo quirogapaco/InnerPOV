@@ -1,30 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Lock } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
-export default function PhotoCard({ photo, onLike, onComment, blurImage = false, onUnlock, viewMode = 'grid' }) {
+export default function PhotoCard({ photo, onLike, onComment, blurImage = false, onUnlock, viewMode = 'grid', participant }) {
   // photo data shape: { id, file_url, caption, likes_count, comments_count, event_participants: { display_name } }
-  
-  // Local state for optimistic UI updates
-  const [liked, setLiked] = useState(false);
+
+  const [liked, setLiked] = useState(photo.liked_by_me || false);
   const [likesCount, setLikesCount] = useState(photo.likes_count || 0);
   const [isGiraffe, setIsGiraffe] = useState(false);
-  
-  const handleLike = (e) => {
+  const [hearts, setHearts] = useState([]);
+  const lastTap = useRef(0);
+
+  const updateLikeInDB = async (isLiking) => {
+    if (!participant?.id) return;
+    
+    // 3. El recuento de likes depende de likes_count de media
+    const newCount = isLiking ? likesCount + 1 : likesCount - 1;
+    setLikesCount(newCount);
+    setLiked(isLiking);
+
+    if (onLike) {
+      onLike(photo.id, isLiking, newCount);
+    }
+
+    try {
+      if (isLiking) {
+        // 2. Agregar fila en media_likes
+        const { data } = await supabase.from('media_likes')
+          .select('id').match({ media_id: photo.id, participant_id: participant.id }).maybeSingle();
+        if (!data) {
+          await supabase.from('media_likes').insert({ media_id: photo.id, participant_id: participant.id });
+        }
+      } else {
+        // 2. Borrar fila en media_likes
+        await supabase.from('media_likes')
+          .delete()
+          .match({ media_id: photo.id, participant_id: participant.id });
+      }
+    } catch (err) {
+      console.error('Error al actualizar like en BD:', err);
+    }
+  };
+
+  const toggleLike = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Toggle local state for immediate feedback
-    if (liked) {
-      setLikesCount(prev => prev - 1);
-      setLiked(false);
-    } else {
-      setLikesCount(prev => prev + 1);
-      setLiked(true);
+
+    updateLikeInDB(!liked);
+  };
+
+  const handleTap = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+
+    if (now - lastTap.current < DOUBLE_TAP_DELAY) {
+      handleDoubleTapLike();
     }
-    
-    // Trigger external callback if provided (to save in database)
-    if (onLike) {
-      onLike(photo.id, !liked);
+
+    lastTap.current = now;
+  };
+
+  const handleDoubleTapLike = () => {
+    // Create a new heart for the animation
+    const id = Date.now() + Math.random();
+
+    // Random offsets and rotations to make it look dynamic when spammed
+    const randomX = Math.floor(Math.random() * 40) - 20; // -20px to 20px
+    const randomY = Math.floor(Math.random() * 40) - 20;
+    const randomRotation = Math.floor(Math.random() * 30) - 15; // -15deg to 15deg
+
+    setHearts(prev => [...prev, { id, x: randomX, y: randomY, rotation: randomRotation }]);
+
+    // Remove the specific heart after animation
+    setTimeout(() => {
+      setHearts(prev => prev.filter(h => h.id !== id));
+    }, 1000); // 1000ms duration for the animation
+
+    // Only like, never unlike on double tap
+    if (!liked) {
+      updateLikeInDB(true);
     }
   };
 
@@ -55,9 +112,39 @@ export default function PhotoCard({ photo, onLike, onComment, blurImage = false,
         src={photo.file_url}
         alt={photo.caption || 'Recuerdo del evento'}
         onLoad={handleImageLoad}
-        className={`w-full ${viewMode === 'feed' ? 'h-auto max-h-[700px]' : (isGiraffe ? 'aspect-[2/3]' : 'h-auto')} object-cover transition-transform duration-500 ${blurImage ? 'blur-xl scale-110' : 'group-hover:scale-105'}`}
+        onClick={handleTap}
+        className={`w-full select-none touch-manipulation ${viewMode === 'feed' ? 'h-auto max-h-[700px]' : (isGiraffe ? 'aspect-[2/3]' : 'h-auto')} object-cover transition-transform duration-500 ${blurImage ? 'blur-xl scale-110' : 'group-hover:scale-105'}`}
       />
-      
+
+      {/* Floating Heart Animations */}
+      <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+        {hearts.map((heart) => (
+          <div
+            key={heart.id}
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              transform: `translate(${heart.x}px, ${heart.y}px) rotate(${heart.rotation}deg)`
+            }}
+          >
+            <Heart
+              className="text-red-500 fill-red-500 drop-shadow-2xl"
+              size={100}
+              style={{ animation: 'heartPop 1s ease-out forwards' }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes heartPop {
+          0% { transform: scale(0.5); opacity: 1; }
+          10% { transform: scale(1.2); opacity: 1; }
+          25% { transform: scale(1); opacity: 1; }
+          70% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+      `}</style>
+
       {blurImage && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/10 gap-3">
           <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-black shadow-lg">
@@ -76,7 +163,7 @@ export default function PhotoCard({ photo, onLike, onComment, blurImage = false,
           )}
         </div>
       )}
-      
+
       {!blurImage && viewMode === 'feed' && (
         <>
           {/* Top Overlay: User Info */}
@@ -96,15 +183,15 @@ export default function PhotoCard({ photo, onLike, onComment, blurImage = false,
             )}
             <div className="flex items-center justify-between text-white/90 pointer-events-auto">
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={handleLike}
+                <button
+                  onClick={toggleLike}
                   className="flex items-center gap-1.5 hover:text-white transition"
                 >
                   <Heart size={18} className={liked ? 'text-red-500 fill-current' : 'text-white'} />
                   <span className="text-xs font-medium">{likesCount}</span>
                 </button>
-                
-                <button 
+
+                <button
                   onClick={handleComment}
                   className="flex items-center gap-1.5 hover:text-white transition"
                 >
@@ -112,7 +199,7 @@ export default function PhotoCard({ photo, onLike, onComment, blurImage = false,
                   <span className="text-xs font-medium">{commentsCount}</span>
                 </button>
               </div>
-              
+
               {photo.taken_at && (
                 <span className="text-[10px] uppercase tracking-wider opacity-75">
                   {new Date(photo.taken_at).toLocaleDateString()}
