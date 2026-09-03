@@ -89,6 +89,15 @@ export default function MissionDetailView() {
     }));
   };
 
+  const handlePhotoComment = (photoId) => {
+    setPhotos(prevPhotos => prevPhotos.map(p => {
+      if (p.id === photoId) {
+        return { ...p, comments_count: (p.comments_count || 0) + 1 };
+      }
+      return p;
+    }));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fdf8f8] flex flex-col items-center justify-center gap-3">
@@ -225,6 +234,7 @@ export default function MissionDetailView() {
             onUnlock={() => setIsUploadModalOpen(true)}
             participant={participant}
             onLike={handlePhotoLike}
+            onCommentAdded={handlePhotoComment}
           />
         </section>
       </main>

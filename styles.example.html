@@ -1,213 +1,273 @@
 <!DOCTYPE html>
 
-<html lang="es">
+<html class="light" lang="es">
 
 <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Reto: Selfie con los Novios</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <title>InnerPOV - Comments</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <style data-purpose="custom-fonts">
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #FAFAFA;
-            color: #333;
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#cac6c4",
+                        "on-primary-fixed": "#1c1b1b",
+                        "surface-container-high": "#ebe7e6",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#444748",
+                        "surface-bright": "#fdf8f8",
+                        "tertiary": "#000000",
+                        "primary-fixed": "#e5e2e1",
+                        "outline": "#747878",
+                        "surface-container": "#f1edec",
+                        "on-secondary-fixed": "#1d1c17",
+                        "on-tertiary-container": "#868382",
+                        "surface-tint": "#5f5e5e",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#474746",
+                        "on-secondary-fixed-variant": "#494741",
+                        "background": "#fdf8f8",
+                        "on-primary-container": "#858383",
+                        "on-secondary-container": "#65625c",
+                        "surface-variant": "#e5e2e1",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#cac6be",
+                        "surface-container-highest": "#e5e2e1",
+                        "primary": "#000000",
+                        "inverse-primary": "#c8c6c5",
+                        "surface-container-low": "#f7f3f2",
+                        "tertiary-fixed": "#e6e2df",
+                        "on-background": "#1c1b1b",
+                        "tertiary-container": "#1c1b1a",
+                        "secondary": "#615e58",
+                        "primary-container": "#1c1b1b",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#484645",
+                        "surface-dim": "#ddd9d8",
+                        "secondary-fixed": "#e7e2da",
+                        "on-surface": "#1c1b1b",
+                        "on-tertiary-fixed": "#1c1b1a",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "inverse-on-surface": "#f4f0ef",
+                        "surface": "#fdf8f8",
+                        "inverse-surface": "#313030",
+                        "secondary-container": "#e4dfd7",
+                        "outline-variant": "#c4c7c7",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "48px",
+                        "container-padding-desktop": "64px",
+                        "container-padding-mobile": "20px",
+                        "gutter": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "display-lg": ["Playfair Display"],
+                        "display-lg-mobile": ["Playfair Display"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Playfair Display"],
+                        "button": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["13px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+                        "button": ["15px", { "lineHeight": "20px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
 
-        h1,
-        h2,
-        h3,
-        .serif-font {
-            font-family: 'Playfair Display', serif;
-        }
-    </style>
-    <style data-purpose="custom-utilities">
-        .glass-overlay {
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
 
-        .glass-header {
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
-        }
-
-        /* Hide scrollbar for horizontal scrolling */
-        .no-scrollbar::-webkit-scrollbar {
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar {
             display: none;
         }
 
-        .no-scrollbar {
+        * {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
     </style>
 </head>
 
-<body class="antialiased h-screen flex flex-col bg-[#FAFAFA]">
-    <!-- BEGIN: Header -->
-    <header class="sticky top-0 z-50 bg-[#FAFAFA]/90 backdrop-blur-md border-b border-gray-200">
-        <div class="flex items-center justify-between px-4 py-3">
-            <button
-                class="p-2 rounded-full bg-white shadow-sm border border-gray-100 text-gray-700 hover:bg-gray-50 transition">
-                <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                    stroke-width="2" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="19" x2="5" y1="12" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-            </button>
-            <h1 class="text-lg font-semibold serif-font text-gray-900">Detalle de Reto</h1>
-            <button
-                class="p-2 rounded-full bg-white shadow-sm border border-gray-100 text-gray-700 hover:bg-gray-50 transition">
-                <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                    stroke-width="2" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="1"></circle>
-                    <circle cx="19" cy="12" r="1"></circle>
-                    <circle cx="5" cy="12" r="1"></circle>
-                </svg>
-            </button>
+<body
+    class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col w-full max-w-[390px] mx-auto relative overflow-hidden shadow-2xl">
+    <!-- 1. Top Navigation -->
+    <header
+        class="fixed top-0 w-full max-w-[390px] z-50 bg-surface/80 backdrop-blur-xl border-b border-on-surface/[0.05] h-16 flex items-center justify-between px-container-padding-mobile">
+        <button
+            class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-highest transition-colors text-on-surface">
+            <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+        </button>
+        <h1 class="font-headline-md text-headline-md text-on-surface">Comentarios</h1>
+        <div class="w-10 h-10 rounded-lg overflow-hidden border border-on-surface/[0.05]">
+            <img alt="Context thumbnail" class="w-full h-full object-cover"
+                data-alt="A small square thumbnail image showing a close-up of a bride and groom's hands holding a vibrant pink rose bouquet, captured with soft, bright wedding photography lighting and a luminous aesthetic."
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3FRtAXYGbTG7QswI0fXXPc8gSqeDwnlM8fl9uZHFwwhLB-CoaunWjMRb9_OreA9HMNxEWZrvvZxjsnZZufEgXTByOQOMdYOcGvsIBYHZTtgaxjT1IPJekq9q4xrvesrutJdccscvGvQJJmZ0KuYctyOV3r1i72-do7Pvc49lGbxBN2vQIHjWh0JCRSq1hjKybxegzDvPmUc06NqWzMH8YtvuXVmOzYhPadM9qsdGPHGXkRtgki7yn9g" />
         </div>
     </header>
-    <!-- END: Header -->
-    <!-- BEGIN: Main Content -->
-    <main class="flex-1 overflow-y-auto pb-24">
-        <!-- BEGIN: Challenge Info -->
-        <section class="p-5 bg-white border-b border-gray-100">
-            <div class="flex items-start gap-4">
-                <div class="p-3 bg-gray-50 rounded-full">
-                    <svg class="text-gray-800" fill="none" height="24" stroke="currentColor" stroke-linecap="round"
-                        stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
-                        </path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                </div>
+    <!-- Main Scrollable Area -->
+    <main class="flex-1 overflow-y-auto pt-16 pb-[140px]">
+        <!-- 2. Original Post Context -->
+        <section class="p-container-padding-mobile border-b border-on-surface/[0.05] bg-surface">
+            <div class="flex items-start gap-3">
+                <img alt="Author avatar" class="w-10 h-10 rounded-full object-cover"
+                    data-alt="A small circular profile picture of an elegant woman with soft lighting, matching the premium Luminous Occasions aesthetic."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDT6CQrjWVeVWu4QQU6dy2iv68YVexAlFBFC__w2LNM56dNSs3W4fKhqsda9aypccpP689ptSMUKriFjIUZOeql3NukiTRLPRXtUNO0cADxFAjDfwsH8G7BZlasvEhCkDDSpJfb0yoNSGcUtnMHU3mtAxozhmb9owgTqI9YJh1xlSCX3nsz12iiYAiPR2jk6TiEPeLbnwmd6Wjj5-yCAyNTrYJlLfburLsJXoKm3WytxWsw1OXfpGvwcA" />
                 <div class="flex-1">
-                    <h2 class="text-xl font-bold text-gray-900 serif-font mb-1">Selfie con los Novios</h2>
-                    <p class="text-sm text-gray-600 mb-4 leading-relaxed">
-                        Sube aquí tu selfie de recuerdo con los novios. ¡Queremos ver esas sonrisas!
-                    </p>
-                    <!-- Participation Status -->
-                    <div
-                        class="bg-[#FAFAFA] border border-gray-200 rounded-xl p-4 mb-2 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Tu estado</p>
-                            <p class="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                Participando
-                            </p>
-                        </div>
-                        <button
-                            class="bg-black text-white text-sm font-medium py-2 px-4 rounded-full hover:bg-gray-800 transition shadow-md flex items-center gap-2">
-                            <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round"
-                                stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" x2="12" y1="3" y2="15"></line>
-                            </svg>
-                            Añadir Foto
-                        </button>
+                    <div class="flex items-baseline justify-between">
+                        <span class="font-label-sm text-label-sm text-on-surface capitalize">Valentina R.</span>
+                        <span class="text-[12px] text-on-surface-variant">Hace 2 horas</span>
                     </div>
+                    <p class="mt-1 text-on-surface font-body-md">¡Qué noche tan mágica! ✨ La decoración estuvo
+                        espectacular, felicidades a los novios.</p>
                 </div>
             </div>
         </section>
-        <!-- END: Challenge Info -->
-        <!-- BEGIN: Gallery Section -->
-        <section class="p-4">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-900 serif-font">Galería del Reto</h3>
-                <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">24 Fotos</span>
+        <!-- 3. Engagement Stats Summary -->
+        <section class="px-container-padding-mobile py-4 flex items-center gap-6 border-b border-on-surface/[0.05]">
+            <div class="flex items-center gap-1.5 text-on-surface-variant">
+                <span class="material-symbols-outlined text-[20px] icon-fill text-error">favorite</span>
+                <span class="font-label-sm text-[12px]">124</span>
             </div>
-            <!-- Photo Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 grid-cols-2">
-                <!-- Photo Card 1 -->
-                <article class="relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-gray-200">
-                    <img alt="Selfie de Sofía M." class="w-full h-[280px] object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCK1mL8vWyANPzvTSxMC_2i7k79UKOgWPvHS51DoqS7N3M7abOOGYB6qzq-A8fXmxB92ubMweWJM17OsORt6y8RZsdt3uPhSe_eltyj_7OnbS9bxqJ0M6JdOv5d2QeUMSgRrHbn-aY7CuEO_w5Y3V7K4HiUcBioKnomiqR-BVuQOVFxLns74MYQyw-umlYHNBhZ9Fm1Onra80XhVnffMlda9iH5Pei8azDZNZNHL4IuU4nsb6ztuPKftA" />
-                    <!-- Top Overlay: User Info -->
-                    <div class="absolute top-0 inset-x-0 p-3 glass-header flex items-center gap-2">
-                        <img alt="Avatar" class="w-full h-[280px] object-cover"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuClyugT5AGubkV4HswOFtCDCo7jlOR4Z5csCEqConRg9Jv9gzZhiMG3lJSq5f5nETbZYXJb0-nhuL086dgkmEixGJZb_4gok2pThly_2AVGwal1hLi-Pp6PA7cy3_9s-PCaNluN42HbVTMhfzX84s2ZcYWXjHIcZE6rdCNhxKnInWTpBQmGV_XzTBa3q8zvQ_2sQ6qdqUKVnzR94MC4EZrVa2BBYa7Dr5Pe1_6iqHws2GqeGyYDU3cSyw" />
-                        <span class="text-sm font-medium text-white drop-shadow-md">Sofía M.</span>
-                    </div>
-                    <!-- Bottom Overlay: Interactions & Caption -->
-                    <div class="absolute bottom-0 inset-x-0 p-4 glass-overlay flex flex-col justify-end">
-                        <p class="text-white text-sm mb-3 drop-shadow-md line-clamp-2">¡Los más guapos! Felicidades en
-                            su día 🥂✨</p>
-                        <div class="flex items-center justify-between text-white/90">
-                            <div class="flex items-center gap-4">
-                                <button class="flex items-center gap-1.5 hover:text-white transition">
-                                    <svg class="text-red-500" fill="currentColor" height="18" stroke="currentColor"
-                                        stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        viewbox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
-                                        </path>
-                                    </svg>
-                                    <span class="text-xs font-medium">12</span>
-                                </button>
-                                <button class="flex items-center gap-1.5 hover:text-white transition">
-                                    <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round"
-                                        stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="18"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
-                                        </path>
-                                    </svg>
-                                    <span class="text-xs font-medium">3</span>
-                                </button>
-                            </div>
-                            <span class="text-[10px] uppercase tracking-wider opacity-75">Hace 2h</span>
-                        </div>
-                    </div>
-                </article>
-                <!-- Photo Card 2 -->
-                <article class="relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-gray-200">
-                    <img alt="Selfie de Carlos T." class="w-full h-[220px] object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1fHMTEtoSFMMGjXJ14nrViriGRb4ViyKPScqajZ55p6T2EImwc28hzofoDOSrVDAzhkWLDkK2h7t7-8OOZsX8cEN2SpQBd-7o1sp6IskkaNp1fh1OycaW_dVTli5JBuxfoItiiifFYF-7RD-XFozswCLXsTlz6tKSJfxfteC2jRRNFLKoyOMFDTLXrl9tsXIFeQ4oEwPYAJs3wckJpxu2zJkbdr2Cgp0PrFmUPwYvBHUzx5Rjqdc8nw" />
-                    <!-- Top Overlay: User Info -->
-                    <div class="absolute top-0 inset-x-0 p-3 glass-header flex items-center gap-2">
-                        <img alt="Avatar" class="w-full h-[220px] object-cover"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWdEIZ0hjqKMz5xvsV1TeEGO_RZcx2jlJwhPfIhO-7SsK6jEHXvo8VfgpWOiEWTGMqeN74w023Y8miqguWrXmJUSgwl5ame27UxPY8gKugnzjkrAkAJ5EDKJoWDAxbpN13CaEQ1oSC9z0weTxQ51oYLNxDfsBUFGXihEQHfDPPL8xcTl_N6Byr5vEgBdUzLB7LyQ-7hc0WX6NEd7sdCjtZ_z3qmfqLuuTrj7si_nryzRsr-FB7Crbeew" />
-                        <span class="text-sm font-medium text-white drop-shadow-md">Carlos T.</span>
-                    </div>
-                    <!-- Bottom Overlay: Interactions & Caption -->
-                    <div class="absolute bottom-0 inset-x-0 p-4 glass-overlay flex flex-col justify-end">
-                        <p class="text-white text-sm mb-3 drop-shadow-md line-clamp-2">¡Qué fiestón! 🎉</p>
-                        <div class="flex items-center justify-between text-white/90">
-                            <div class="flex items-center gap-4">
-                                <button class="flex items-center gap-1.5 hover:text-white transition">
-                                    <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round"
-                                        stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="18"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
-                                        </path>
-                                    </svg>
-                                    <span class="text-xs font-medium">8</span>
-                                </button>
-                                <button class="flex items-center gap-1.5 hover:text-white transition">
-                                    <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round"
-                                        stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="18"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
-                                        </path>
-                                    </svg>
-                                    <span class="text-xs font-medium">1</span>
-                                </button>
-                            </div>
-                            <span class="text-[10px] uppercase tracking-wider opacity-75">Hace 3h</span>
-                        </div>
-                    </div>
-                </article>
+            <div class="flex items-center gap-1.5 text-on-surface-variant">
+                <span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+                <span class="font-label-sm text-[12px]">48</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-on-surface-variant ml-auto">
+                <span class="material-symbols-outlined text-[20px]">ios_share</span>
             </div>
         </section>
-        <!-- END: Gallery Section -->
+        <!-- 4. Detailed Comments List -->
+        <section class="p-container-padding-mobile flex flex-col gap-6">
+            <!-- Comment 1 -->
+            <div class="flex items-start gap-3">
+                <img alt="Pedro avatar" class="w-8 h-8 rounded-full object-cover"
+                    data-alt="A small circular profile picture of a handsome man in a formal suit, representing the groom, captured with premium bright lighting."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpK7FF6Jy0PMKEv-X2FvKGWorWQfpeINVKQg0y3QNpbjTHbRruFBMOdQMSOnyPEtrzNUSaKy408D_UZptvC1otBWQbcI8eTHeCNVsAzwaCUM4nCA1zPeFNBNGL7mjMvopENz77OfSnWfScaFMzcMBXsF-UKOVf3lnubcRgaWi6rWn9-yfv6L9xseGob5ietjVvhTsgUQgTP_43XAXxhkvazmbUuhOAn-l9kSYRS19Dl6OFErPjou_UMg" />
+                <div class="flex-1">
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-label-sm text-label-sm text-on-surface capitalize">Pedro (Novio)</span>
+                        <span class="text-[11px] text-on-surface-variant">• 1 hora</span>
+                    </div>
+                    <p class="mt-1 text-on-surface text-[14px] leading-snug">¡Gracias Val! Fue increíble compartirlo con
+                        ustedes. 🙌</p>
+                    <div class="flex items-center gap-4 mt-2">
+                        <button
+                            class="text-[12px] font-medium text-on-surface-variant hover:text-primary transition-colors">Responder</button>
+                    </div>
+                </div>
+                <button class="mt-1">
+                    <span class="material-symbols-outlined text-[16px] text-on-surface-variant">favorite</span>
+                </button>
+            </div>
+            <!-- Comment 2 -->
+            <div class="flex items-start gap-3">
+                <img alt="Carlos avatar" class="w-8 h-8 rounded-full object-cover"
+                    data-alt="A small circular profile picture of a young man smiling, wearing smart casual attire, in a bright elegant setting."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHj3ZQVGI1-i0hiINEO4uVvszCyDsIG2Fd8LANQRLulpFcD93LX4PyIxuxMvSUb3fZ9AyRAsXBd-IkPFF_OHJUSBkIDlUQg0xwIj4bisFbYaxBpL7WKBITzKh4PqTu9AhE5FdnFEF8PU2LZybYsOnF54hYDbWQAYCUhIU8nAt4ZYZa4_SllsU_n7P1u4WvgF1dGYgp4MU68_XEgu091QM_jR6W8A04ES0qfz0wXtohBsADSSUtTgTrFQ" />
+                <div class="flex-1">
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-label-sm text-label-sm text-on-surface capitalize">Carlos T.</span>
+                        <span class="text-[11px] text-on-surface-variant">• 45 min</span>
+                    </div>
+                    <p class="mt-1 text-on-surface text-[14px] leading-snug">Las fotos que tomaste quedaron de revista.
+                        Pásame la del brindis por fa 🥂</p>
+                    <div class="flex items-center gap-4 mt-2">
+                        <button
+                            class="text-[12px] font-medium text-on-surface-variant hover:text-primary transition-colors">Responder</button>
+                    </div>
+                </div>
+                <button class="mt-1">
+                    <span class="material-symbols-outlined text-[16px] icon-fill text-error">favorite</span>
+                </button>
+            </div>
+            <!-- Comment 3 -->
+            <div class="flex items-start gap-3">
+                <img alt="Maya avatar" class="w-8 h-8 rounded-full object-cover"
+                    data-alt="A small circular profile picture of a beautiful bride in her dress, bright and luminous photography style."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-VYkcNdj84g12F2MEA6HrdFYhjlKT0U12AAtQjfAxemqp_DOHuP-GUHtm4JdHtmyy7ZrVNz-Jz6RW3jmYTp-GJ3QO8jaeXQwhGnAlu5ZgXrFSPtcKZqdXBsvCx-mTrkfwsKgsJrzq3G32j9qYxDVgV8A7krSFXvdvwL8yJBWzkgpJa0O0rlfZEGzKHHC6sECzkT51d_gAUynKJZfdoXJhyDC5mcZoA_vJuqxP6LIBWc-aQjXBdeiwOw" />
+                <div class="flex-1">
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-label-sm text-label-sm text-on-surface capitalize">Maya (Novia)</span>
+                        <span class="text-[11px] text-on-surface-variant">• 15 min</span>
+                    </div>
+                    <p class="mt-1 text-on-surface text-[14px] leading-snug">¡Hermosa! Qué linda memoria. Te queremos
+                        muchísimo ❤️</p>
+                    <div class="flex items-center gap-4 mt-2">
+                        <button
+                            class="text-[12px] font-medium text-on-surface-variant hover:text-primary transition-colors">Responder</button>
+                    </div>
+                </div>
+                <button class="mt-1">
+                    <span class="material-symbols-outlined text-[16px] text-on-surface-variant">favorite</span>
+                </button>
+            </div>
+        </section>
     </main>
-    <!-- END: Main Content -->
+    <!-- 5. Pinned Interaction Bar -->
+    <div
+        class="fixed bottom-0 w-full max-w-[390px] bg-surface/90 backdrop-blur-xl border-t border-on-surface/[0.05] pb-safe">
+        <!-- Quick Reactions -->
+        <div class="flex items-center gap-4 px-container-padding-mobile py-2 overflow-x-auto">
+            <button class="text-[24px] hover:scale-110 transition-transform">❤️</button>
+            <button class="text-[24px] hover:scale-110 transition-transform">✨</button>
+            <button class="text-[24px] hover:scale-110 transition-transform">🙌</button>
+            <button class="text-[24px] hover:scale-110 transition-transform">🥂</button>
+            <button class="text-[24px] hover:scale-110 transition-transform">😍</button>
+        </div>
+        <!-- Input Area -->
+        <div class="flex items-center gap-3 px-container-padding-mobile pb-4 pt-2">
+            <img alt="Your avatar" class="w-9 h-9 rounded-full object-cover"
+                data-alt="Small circular avatar of the current user, a casual yet elegant portrait in a well-lit environment."
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0XS3IIL3k-lvcSw0RkPOFG6LDdAzb1KT9NNFAQX10CquNKm626AYuKx6fi3XZQ4ICmPwt7FJVvjUIqGbCgW13w1_5AHzNAM0__M0LYGO7VNLbgp3L8YLsjvPCP0eFikuSVMxu-0zHiEKAhe7ke_IoHoH2Jre2ojTK7_npxVGSFVEn_5pr_fHhylxqujP5h1_55PVk-lJhGyxxSplo6mavDyrApF7D3azXHiGGmpcSlDH_3ZRuLsOLIg" />
+            <div class="flex-1 relative">
+                <input
+                    class="w-full h-10 pl-4 pr-10 bg-surface-container-low border-none rounded-full font-body-md text-[14px] text-on-surface focus:ring-1 focus:ring-outline/20 focus:bg-surface transition-all placeholder:text-on-surface-variant/60"
+                    placeholder="Añade un comentario..." type="text" />
+                <button
+                    class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-primary hover:text-primary/80 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">send</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
