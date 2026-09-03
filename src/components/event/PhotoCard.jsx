@@ -1,14 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Lock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import CommentsSection from './CommentsSection';
 
-export default function PhotoCard({ photo, onLike, onComment, blurImage = false, onUnlock, viewMode = 'grid', participant }) {
+export default function PhotoCard({ photo, onLike, onComment, onCommentAdded, blurImage = false, onUnlock, viewMode = 'grid', participant }) {
   // photo data shape: { id, file_url, caption, likes_count, comments_count, event_participants: { display_name } }
 
   const [liked, setLiked] = useState(photo.liked_by_me || false);
   const [likesCount, setLikesCount] = useState(photo.likes_count || 0);
   const [isGiraffe, setIsGiraffe] = useState(false);
   const [hearts, setHearts] = useState([]);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(photo.comments_count || 0);
   const lastTap = useRef(0);
 
   const updateLikeInDB = async (isLiking) => {
@@ -88,15 +91,13 @@ export default function PhotoCard({ photo, onLike, onComment, blurImage = false,
   const handleComment = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsCommentsOpen(true);
     if (onComment) {
       onComment(photo);
-    } else {
-      console.log('Abrir modal de comentarios para la foto:', photo.id);
     }
   };
 
   const authorName = photo.event_participants?.display_name || 'Invitado';
-  const commentsCount = photo.comments_count || 0;
 
   const handleImageLoad = (e) => {
     const { naturalWidth, naturalHeight } = e.target;
@@ -209,6 +210,16 @@ export default function PhotoCard({ photo, onLike, onComment, blurImage = false,
           </div>
         </>
       )}
+      <CommentsSection 
+        isOpen={isCommentsOpen} 
+        onClose={() => setIsCommentsOpen(false)} 
+        mediaId={photo.id}
+        participant={participant}
+        onCommentAdded={() => {
+          setCommentsCount(prev => prev + 1);
+          if (onCommentAdded) onCommentAdded(photo.id);
+        }}
+      />
     </article>
   );
 }

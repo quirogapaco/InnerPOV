@@ -172,6 +172,15 @@ export default function EventDetailView() {
     }));
   };
 
+  const handlePhotoComment = (photoId) => {
+    setPhotos(prevPhotos => prevPhotos.map(p => {
+      if (p.id === photoId) {
+        return { ...p, comments_count: (p.comments_count || 0) + 1 };
+      }
+      return p;
+    }));
+  };
+
   if (loading || loadingParticipant) {
     return (
       <div className="min-h-screen bg-[#fdf8f8] flex flex-col items-center justify-center gap-3">
@@ -249,6 +258,7 @@ export default function EventDetailView() {
             slug={slug}
             participant={participant}
             onLike={handlePhotoLike}
+            onCommentAdded={handlePhotoComment}
           />
         </main>
       </div>
